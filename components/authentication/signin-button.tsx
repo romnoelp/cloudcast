@@ -31,7 +31,7 @@ const SignInButton = () => {
 
   if (pathname === "/signin") {
     return (
-      <Button onClick={signInWithGoogle} disabled={isLoading} className="w-full">
+      <Button onClick={signInWithGoogle} disabled={isLoading} className="w-full" >
         {isLoading ? (
           <span className="size-4 animate-spin border-2 border-t-transparent rounded-full"></span>
         ) : (
