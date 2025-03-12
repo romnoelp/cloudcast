@@ -1,17 +1,25 @@
 "use client";
 
 import { useState, lazy, Suspense } from "react";
+import { Skeleton } from "@/components/ui/skeleton"; 
 
 const LazySignIn = lazy(() => import("./lazy-signin"));
 
 const SignInButton = () => {
-  const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <LazySignIn setIsLoading={setIsLoading} isLoading={isLoading} />{" "}
-    </Suspense>
-  );
+    return (
+        <Suspense
+            fallback={
+                <div className="flex items-center justify-center gap-2">
+                    <Skeleton className="h-5 w-5 rounded-full" />
+                    Loading...
+                </div>
+            }
+        >
+            <LazySignIn setIsLoading={setIsLoading} isLoading={isLoading} />
+        </Suspense>
+    );
 };
 
 export default SignInButton;
