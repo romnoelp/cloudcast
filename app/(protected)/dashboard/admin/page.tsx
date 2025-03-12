@@ -9,8 +9,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RecentSales } from "@/components/dashboard/recent-sales";
 import { Overview } from "@/components/dashboard/overview";
+import RecentSales from "@/components/dashboard/recent-sales";
 
 export default function AdminPage() {
   return (

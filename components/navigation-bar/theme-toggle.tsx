@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Moon, Sun } from "lucide-react";
 
-export default function ThemeToggle() {
+const ThemeToggle = () => {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isSystem, setIsSystem] = useState(theme === "system");
@@ -47,4 +47,6 @@ export default function ThemeToggle() {
       <Moon size={18} style={{ color: "var(--accent)" }} />
     </div>
   );
-}
+};
+
+export default ThemeToggle;
