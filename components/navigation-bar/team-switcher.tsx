@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useState, useEffect } from "react";
 import { Check, ChevronsUpDown, PlusCircle, LogIn, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -33,33 +33,24 @@ import {
 } from "@/components/ui/command";
 import { useUser } from "@/context/user-context";
 import { createClient } from "@/lib/supabase/client";
-
-type Organization = {
-  id: string;
-  name: string;
-  description: string;
-  join_code: string;
-  created_by: string;
-};
+import type { Organization } from "@/types/organization";
 
 const generateJoinCode = () =>
   Math.random().toString(36).substring(2, 10).toUpperCase();
 
 const TeamSwitcher: React.FC = () => {
-  const [open, setOpen] = React.useState(false);
-  const [showOrgDialog, setShowOrgDialog] = React.useState(false);
+  const [open, setOpen] = useState(false);
+  const [showOrgDialog, setShowOrgDialog] = useState(false);
   const { user, role } = useUser();
-  const [orgName, setOrgName] = React.useState("");
-  const [description, setDescription] = React.useState("");
-  const [joinCode, setJoinCode] = React.useState(generateJoinCode());
-  const [organizations, setOrganizations] = React.useState<Organization[]>([]);
-  const [selectedOrg, setSelectedOrg] = React.useState<Organization | null>(
-    null
-  );
-  const [copySuccess, setCopySuccess] = React.useState(false);
+  const [orgName, setOrgName] = useState("");
+  const [description, setDescription] = useState("");
+  const [joinCode, setJoinCode] = useState(generateJoinCode());
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
+  const [copySuccess, setCopySuccess] = useState(false);
   const supabase = createClient();
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (user) fetchOrganizations();
   }, [user]);
 
@@ -155,8 +146,6 @@ const TeamSwitcher: React.FC = () => {
             <CommandInput placeholder="Search organizations..." />
             <CommandList>
               <CommandEmpty>No organizations found.</CommandEmpty>
-
-              {/* Organization List Matches Teams List */}
               {organizations.length > 0 && (
                 <CommandGroup heading="Organizations">
                   {organizations.map((org) => (
@@ -186,11 +175,7 @@ const TeamSwitcher: React.FC = () => {
                 </CommandGroup>
               )}
             </CommandList>
-
-            {/* Separator before Create Organization */}
             <CommandSeparator />
-
-            {/* Create Organization Styled to Match Reference */}
             <CommandList>
               <CommandGroup>
                 <DialogTrigger asChild>
@@ -213,7 +198,6 @@ const TeamSwitcher: React.FC = () => {
         </PopoverContent>
       </Popover>
 
-      {/* Dialog for Creating or Joining Organization */}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Create Organization</DialogTitle>
@@ -222,53 +206,29 @@ const TeamSwitcher: React.FC = () => {
           </DialogDescription>
         </DialogHeader>
 
-        <div>
-          <div className="space-y-4 py-2 pb-4">
-            {/* Organization Name */}
-            <div className="space-y-2">
-              <Label htmlFor="org-name">Organization Name</Label>
-              <Input
-                id="org-name"
-                placeholder="Acme Inc."
-                value={orgName}
-                onChange={(e) => setOrgName(e.target.value)}
-              />
-            </div>
+        <div className="space-y-4 py-2 pb-4">
+          <Label htmlFor="org-name">Organization Name</Label>
+          <Input
+            id="org-name"
+            placeholder="Acme Inc."
+            value={orgName}
+            onChange={(e) => setOrgName(e.target.value)}
+          />
 
-            {/* Organization Description */}
-            <div className="space-y-2">
-              <Label htmlFor="org-desc">Description</Label>
-              <Input
-                id="org-desc"
-                placeholder="Short description..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
+          <Label htmlFor="org-desc">Description</Label>
+          <Input
+            id="org-desc"
+            placeholder="Short description..."
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
 
-            {/* Copyable Join Code */}
-            <div className="space-y-2">
-              <Label htmlFor="join-code">Join Code</Label>
-              <div className="relative flex items-center">
-                <Input
-                  id="join-code"
-                  value={joinCode}
-                  disabled
-                  className="pr-10 cursor-not-allowed"
-                />
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="absolute right-2"
-                  onClick={handleCopyCode}
-                >
-                  <Copy className="h-5 w-5" />
-                </Button>
-              </div>
-              {copySuccess && (
-                <p className="text-green-500 text-sm mt-1">Copied!</p>
-              )}
-            </div>
+          <Label htmlFor="join-code">Join Code</Label>
+          <div className="relative flex items-center">
+            <Input id="join-code" value={joinCode} disabled className="pr-10" />
+            <Button size="icon" variant="ghost" onClick={handleCopyCode}>
+              <Copy className="h-5 w-5" />
+            </Button>
           </div>
         </div>
 
