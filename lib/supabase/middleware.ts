@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-export const updateSession = async (request: NextRequest) => {
+export const handleAuthSession = async (request: NextRequest) => { 
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -24,68 +24,34 @@ export const updateSession = async (request: NextRequest) => {
     error: userError,
   } = await supabase.auth.getUser();
 
-  if (userError) {
-    console.error("Supabase auth error:", userError);
+  if (userError || !user) {
     return NextResponse.redirect(new URL("/signin", request.nextUrl));
   }
 
-  const allowedPaths = ["/signin", "/auth"];
-  if (
-    !user &&
-    !allowedPaths.some((path) => request.nextUrl.pathname.startsWith(path))
-  ) {
-    const url = new URL("/signin", request.nextUrl);
-    url.searchParams.set("next", request.nextUrl.pathname);
-    return NextResponse.redirect(url);
+  const { data: userData, error: roleError } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (roleError || !userData?.role) {
+    return NextResponse.redirect(new URL("/error", request.nextUrl));
   }
 
-  if (user && request.nextUrl.pathname.startsWith("/signin")) {
-    // Fetch user role from Supabase
-    const { data: userData, error: roleError } = await supabase
-      .from("users")
-      .select("role")
-      .eq("id", user.id)
-      .single();
+  const role = userData.role;
+  const roleToDashboard: Record<string, string> = {
+    admin: "/dashboard/admin",
+    "product-manager": "/dashboard/product-manager",
+    employee: "/dashboard/employee",
+  };
 
-    if (roleError) {
-      console.error("Error fetching user role:", roleError);
-    }
-
-    const role = userData?.role || "employee";
-
-    // Role-based dashboard paths
-    const roleToDashboard: Record<string, string> = {
-      admin: "/dashboard/admin",
-      "product-manager": "/dashboard/product-manager",
-      employee: "/dashboard/employee",
-    };
-
-    const dashboardPath = roleToDashboard[role] || "/dashboard/employee";
-
-    return NextResponse.redirect(new URL(dashboardPath, request.nextUrl));
+  if (request.nextUrl.pathname === "/dashboard") {
+    return NextResponse.redirect(new URL(roleToDashboard[role] || "/dashboard/employee", request.nextUrl));
   }
 
-  if (user && request.nextUrl.pathname.startsWith("/dashboard")) {
-    const { data: userData, error: roleError } = await supabase
-      .from("users")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (roleError) {
-      console.error("Error fetching user role:", roleError);
-    }
-
-    const role = userData?.role || "employee";
-
-    const roleToDashboard: Record<string, string> = {
-      admin: "/dashboard/admin",
-      "product-manager": "/dashboard/product-manager",
-      employee: "/dashboard/employee",
-    };
-    const dashboardPath = roleToDashboard[role] || "/dashboard/employee";
-    if (request.nextUrl.pathname !== dashboardPath) {
-      return NextResponse.redirect(new URL(dashboardPath, request.nextUrl));
+  if (request.nextUrl.pathname.startsWith("/dashboard")) {
+    if (request.nextUrl.pathname !== roleToDashboard[role]) {
+      return NextResponse.redirect(new URL(roleToDashboard[role], request.nextUrl));
     }
   }
 
