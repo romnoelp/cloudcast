@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check, ChevronsUpDown, PlusCircle, LogIn, Copy } from "lucide-react";
+import { Check, ChevronsUpDown, PlusCircle, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import { useUser } from "@/context/user-context";
+import { useOrganization } from "@/context/organization-context"; // ✅ Use Organization Context
 import { createClient } from "@/lib/supabase/client";
 import type { Organization } from "@/types/organization";
 
@@ -42,28 +43,20 @@ const TeamSwitcher: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [showOrgDialog, setShowOrgDialog] = useState(false);
   const { user, role } = useUser();
+  const { selectedOrg, setSelectedOrg, organizations } = useOrganization(); // ✅ Use context
   const [orgName, setOrgName] = useState("");
   const [description, setDescription] = useState("");
   const [joinCode, setJoinCode] = useState(generateJoinCode());
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
   const supabase = createClient();
 
-  useEffect(() => {
-    if (user) fetchOrganizations();
-  }, [user]);
-
-  const fetchOrganizations = async () => {
-    const { data, error } = await supabase.from("organizations").select("*");
-    if (error) console.error("Error fetching organizations:", error);
-    else setOrganizations(data || []);
-  };
+  // ✅ Remove auto-selection, user must manually select an organization
+  useEffect(() => {}, []);
 
   const handleCreateOrganization = async () => {
     if (!orgName || !description) return;
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("organizations")
       .insert([
         {
@@ -72,13 +65,15 @@ const TeamSwitcher: React.FC = () => {
           join_code: joinCode,
           created_by: user?.id,
         },
-      ]);
+      ])
+      .select()
+      .single();
 
     if (error) {
       console.error("Error creating organization:", error);
       toast.error("Failed to create organization.");
     } else {
-      fetchOrganizations();
+      setSelectedOrg(data); // ✅ Set newly created org as selected
       setShowOrgDialog(false);
       toast.success(`${orgName} has been created successfully!`);
       setOrgName("");
@@ -92,7 +87,7 @@ const TeamSwitcher: React.FC = () => {
 
     const { data: org, error } = await supabase
       .from("organizations")
-      .select("id, name")
+      .select("id, name, description, created_by") // ✅ Ensure fetching full data
       .eq("join_code", joinCode)
       .single();
 
@@ -112,7 +107,7 @@ const TeamSwitcher: React.FC = () => {
       console.error("Error joining organization:", joinError);
       toast.error("Failed to join organization.");
     } else {
-      fetchOrganizations();
+      setSelectedOrg(org); // ✅ Update global context with joined org
       setShowOrgDialog(false);
       toast.success(`You have joined ${org.name}!`);
       setJoinCode("");
@@ -132,7 +127,7 @@ const TeamSwitcher: React.FC = () => {
           <Button variant="outline" className={cn("w-[200px] justify-between")}>
             <Avatar className="mr-2 h-5 w-5">
               <AvatarImage
-                src={`https://avatar.vercel.sh/organization.png`}
+                src={`https://avatar.vercel.sh/${selectedOrg?.id || "organization"}.png`}
                 alt="Org"
               />
               <AvatarFallback>O</AvatarFallback>
@@ -152,7 +147,11 @@ const TeamSwitcher: React.FC = () => {
                     <CommandItem
                       key={org.id}
                       onSelect={() => {
-                        setSelectedOrg(org);
+                        if (!org.description || !org.created_by) {
+                          console.error("Organization data is incomplete:", org);
+                          return;
+                        }
+                        setSelectedOrg(org); // ✅ Updates global context
                         setOpen(false);
                       }}
                       className="text-sm"
