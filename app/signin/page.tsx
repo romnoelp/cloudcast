@@ -1,9 +1,20 @@
 "use client";
 
-import { GalleryVerticalEnd } from "lucide-react";
+import { useState, useEffect } from "react";
 import SignInButton from "@/components/authentication/signin-button";
+import { GalleryVerticalEnd } from "lucide-react";
+import { useTheme } from "next-themes";
 
 const Signin = () => {
+  const { theme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isDark = resolvedTheme === "dark" || theme === "dark";
+
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       {/* Left Side - Login Section */}
@@ -28,13 +39,21 @@ const Signin = () => {
           <p className="mt-4 text-xs text-muted-foreground">
             By signing in, you agree to our{" "}
             <span className="underline cursor-pointer">Terms of Service</span>{" "}
-            and <span className="underline cursor-pointer">Privacy Policy</span>
-            .
+            and <span className="underline cursor-pointer">Privacy Policy</span>.
           </p>
         </div>
       </div>
-      {/* Right Side - Image Section */}
-      <div className="hidden lg:flex bg-[oklch(0.871_0.006_286.286)]"></div>
+
+      {/* Right Side - Dynamic Gradient Background */}
+      <div
+        className={`hidden lg:flex min-h-screen transition-all duration-300 ${
+          !mounted
+            ? "bg-gray-200" // Prevents mismatch before hydration
+            : isDark
+            ? "bg-gradient-to-r from-[#1e3a8a] to-[#0f172a]" 
+            : "bg-gradient-to-r from-[#3b82f6] to-[#1e3a8a]" 
+        }`}
+      ></div>
     </div>
   );
 };

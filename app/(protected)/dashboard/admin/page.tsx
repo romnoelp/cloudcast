@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -30,10 +29,10 @@ export default function AdminPage() {
         <TabsContent value="overview" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {[
-              { title: "Total Revenue", value: "$45,231.89", change: "+20.1% from last month" },
-              { title: "Subscriptions", value: "+2,350", change: "+180.1% from last month" },
-              { title: "Sales", value: "+12,234", change: "+19% from last month" },
-              { title: "Active Now", value: "+573", change: "+201 since last hour" },
+              { title: "testData", value: "testStatic", change: "Anotha one" },
+              { title: "Total Users", value: "testValue", change: "+ 20 users since last month" },
+              { title: "Total files", value: "+ 56 files", change: "+ 24 files since last week" },
+              { title: "Active users", value: "30 organization members", change: "+ 20 since last hour" },
             ].map((stat, index) => (
               <Card key={index}>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -60,8 +59,8 @@ export default function AdminPage() {
 
             <Card className="col-span-3">
               <CardHeader>
-                <CardTitle>Recent Sales</CardTitle>
-                <CardDescription>You made 265 sales this month.</CardDescription>
+                <CardTitle>Current active administrators</CardTitle>
+                <CardDescription>These members are the ones maintaining CloudCast</CardDescription>
               </CardHeader>
               <CardContent>
                 <RecentSales />
