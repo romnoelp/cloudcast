@@ -1,10 +1,17 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { UserContextType } from "@/types/user-context";
 import type { User } from "@/types/user";
 import type { SupabaseSession, UserRole } from "@/types/authentication";
+import { toast } from "sonner"; 
 
 const UserContext = createContext<UserContextType>({
   user: null,
@@ -23,9 +30,14 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const fetchUser = useCallback(async () => {
     setLoading(true);
 
-    // 🔹 Get current session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError) console.error("Error getting session:", sessionError);
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
+    if (sessionError) {
+      console.error("Error getting session:", sessionError);
+      toast.error("Error retrieving session. Please try again."); 
+    }
 
     setSession(session);
 
@@ -36,7 +48,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    // 🔹 Fetch user from `users` table
     const { data, error } = await supabase
       .from("users")
       .select("id, email, role, name, avatar_url")
@@ -45,6 +56,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
     if (error) {
       console.error("Error fetching user:", error);
+      toast.error("Error fetching user data. Please try again."); 
       setUser(null);
       setRole(null);
     } else {
@@ -58,11 +70,12 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     fetchUser();
 
-    // 🔹 Listen for auth changes
-    const { data: authListener } = supabase.auth.onAuthStateChange((_, _session) => {
-      setSession(_session);
-      fetchUser(); // 🔄 Re-fetch user data when auth changes
-    });
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_, _session) => {
+        setSession(_session);
+        fetchUser();
+      }
+    );
 
     return () => {
       authListener.subscription.unsubscribe();
@@ -71,7 +84,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <UserContext.Provider value={{ user, role, session, loading }}>
-      {children}
+      {children}{" "}
     </UserContext.Provider>
   );
 };

@@ -1,50 +1,32 @@
 "use client";
 
+import { useEffect, useState, useMemo } from "react";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Moon, Sun } from "lucide-react";
 
 const ThemeToggle = () => {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const [isSystem, setIsSystem] = useState(theme === "system");
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+  });
+
+  const isDark = useMemo(() => resolvedTheme === "dark", [resolvedTheme]);
 
   if (!mounted) return null;
 
-  const handleToggle = () => {
-    if (isSystem) {
-      setTheme(resolvedTheme === "dark" ? "light" : "dark");
-      setIsSystem(false);
-    } else {
-      setTheme(theme === "light" ? "dark" : "light");
-    }
-  };
-
-  const handleLongPress = () => {
-    setTheme("system");
-    setIsSystem(true);
-  };
-
   return (
     <div className="flex items-center space-x-2">
-      <Sun size={18} style={{ color: "var(--primary)" }} />
-
+      <Sun size={18} className="text-yellow-500" aria-hidden="true" />   {" "}
       <Switch
-        checked={theme === "dark"}
-        onCheckedChange={handleToggle}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          handleLongPress();
-        }}
+        checked={isDark}
+        onCheckedChange={() => setTheme(isDark ? "light" : "dark")}
         className="bg-[var(--muted)] border-[var(--border)]"
+        aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"} // Add aria-label
       />
-
-      <Moon size={18} style={{ color: "var(--accent)" }} />
+      <Moon size={18} className="text-blue-500" aria-hidden="true" />   {" "}
     </div>
   );
 };

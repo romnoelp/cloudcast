@@ -37,8 +37,6 @@ import {
 } from "@/components/ui/command";
 import { useUser } from "@/context/user-context";
 import { useOrganization } from "@/context/organization-context";
-import { createClient } from "@/lib/supabase/client";
-import type { Organization } from "@/types/organization";
 
 const generateJoinCode = () =>
   Math.random().toString(36).substring(2, 10).toUpperCase();
@@ -46,12 +44,11 @@ const generateJoinCode = () =>
 const TeamSwitcher: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [showOrgDialog, setShowOrgDialog] = useState(false);
-  const { user, role } = useUser();
+  const { role } = useUser();
   const { selectedOrg, setSelectedOrg, organizations } = useOrganization();
   const [orgName, setOrgName] = useState("");
   const [description, setDescription] = useState("");
-  const [joinCode, setJoinCode] = useState(generateJoinCode());
-  const supabase = createClient();
+  const [joinCode] = useState(generateJoinCode());
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(joinCode);

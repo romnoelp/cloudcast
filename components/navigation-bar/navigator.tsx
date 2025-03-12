@@ -9,7 +9,7 @@ import {
   NavigationMenuItem,
   NavigationMenuLink,
 } from "@/components/ui/navigation-menu";
-import { NavLink, roleToLinks } from "@/types/navigation"; // ✅ Import type & links
+import { NavLink, roleToLinks } from "@/types/navigation"; 
 
 const Navigator = () => {
   const { role, loading } = useUser();

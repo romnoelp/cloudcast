@@ -1,7 +1,18 @@
-import type { NextConfig } from "next";
+/** @type {import('next').NextConfig} */
 
-const nextConfig: NextConfig = {
-  /* config options here */
+import withBundleAnalyzer from "@next/bundle-analyzer";
+
+const nextConfig = {
+    images: {
+        domains: ['lh3.googleusercontent.com'],
+    },
+    experimental: {
+        turbo: {}, 
+    },
 };
 
-export default nextConfig;
+const bundleAnalyzerConfig = {
+    enabled: process.env.ANALYZE === 'true',
+};
+
+export default withBundleAnalyzer(bundleAnalyzerConfig)(nextConfig);

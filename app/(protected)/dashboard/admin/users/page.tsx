@@ -37,12 +37,23 @@ import {
 } from "@/components/ui/table"
 import { createClient } from "@/lib/supabase/client"
 import { useOrganization } from "@/context/organization-context"
+import Image from "next/image"  // Import the Image component
+
+// Define the User type
+type User = {
+  user_id: string;
+  user_name: string;
+  user_email: string;
+  user_avatar_url?: string;  // Optional field
+  status: "active" | "inactive";  // Assuming these are the possible statuses
+  role: string;  // Assuming role is a string, adjust as needed
+}
 
 const supabase = createClient()
 
 const UsersTable = () => {
   const { selectedOrg } = useOrganization()
-  const [users, setUsers] = useState<any[]>([])
+  const [users, setUsers] = useState<User[]>([])  // Use User type here
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -60,15 +71,12 @@ const UsersTable = () => {
     fetchUsers()
   }, [selectedOrg])
 
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<User>[] = [  // Use User type here
     {
       id: "select",
       header: ({ table }) => (
         <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
+          checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
           aria-label="Select all"
         />
@@ -84,23 +92,25 @@ const UsersTable = () => {
       enableHiding: false,
     },
     {
-      accessorKey: "Avatar",
+      accessorKey: "user_avatar_url",  // Match field name with User type
       header: "Avatar",
       cell: ({ row }) => (
-        <img
+        <Image
           src={row.original.user_avatar_url || "/default-avatar.png"}
           alt="Avatar"
-          className="w-10 h-10 rounded-full"
+          width={40}  // Set width to 40px (same as the original w-10)
+          height={40} // Set height to 40px (same as the original h-10)
+          className="rounded-full"
         />
       ),
     },
     {
-      accessorKey: "Username",
+      accessorKey: "user_name",  // Match field name with User type
       header: "Name",
       cell: ({ row }) => <span className="font-medium">{row.original.user_name}</span>,
     },
     {
-      accessorKey: "user_email",
+      accessorKey: "user_email",  // Match field name with User type
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -112,17 +122,15 @@ const UsersTable = () => {
       cell: ({ row }) => <span className="lowercase">{row.original.user_email}</span>,
     },
     {
-      accessorKey: "role",
+      accessorKey: "role",  // Match field name with User type
       header: "Role",
     },
     {
-      accessorKey: "status",
+      accessorKey: "status",  // Match field name with User type
       header: "Status",
       cell: ({ row }) => (
         <span
-          className={`px-2 py-1 rounded-md text-xs ${
-            row.original.status === "active" ? "bg-green-500 text-white" : "bg-gray-300"
-          }`}
+          className={`px-2 py-1 rounded-md text-xs ${row.original.status === "active" ? "bg-green-500 text-white" : "bg-gray-300"}`}
         >
           {row.original.status}
         </span>

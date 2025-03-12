@@ -10,19 +10,15 @@ const DashboardRedirect = () => {
   const router = useRouter();
 
   useEffect(() => {
-    if (loading) return;
+    if (!loading) {
+      const roleToDashboard: Record<string, string> = {
+        admin: "/dashboard/admin",
+        "product-manager": "/dashboard/product-manager",
+        employee: "/dashboard/employee",
+      };
 
-    const roleToDashboard: Record<string, string> = {
-      admin: "/dashboard/admin",
-      "product-manager": "/dashboard/product-manager",
-      employee: "/dashboard/employee",
-    };
-
-    const dashboardPath = role
-      ? roleToDashboard[role] || "/dashboard/employee"
-      : "/dashboard/employee";
-
-    router.replace(dashboardPath);
+      router.replace(role ? roleToDashboard[role] || "/dashboard/employee" : "/dashboard/employee");
+    }
   }, [role, loading, router]);
 
   return (
@@ -46,10 +42,7 @@ const DashboardRedirect = () => {
         {Array(4)
           .fill(null)
           .map((_, index) => (
-            <div
-              key={index}
-              className="p-4 rounded-lg border shadow-sm space-y-2"
-            >
+            <div key={index} className="p-4 rounded-lg border shadow-sm space-y-2">
               <Skeleton className="h-4 w-32" />
               <Skeleton className="h-8 w-24" />
               <Skeleton className="h-4 w-40" />
