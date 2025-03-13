@@ -106,11 +106,9 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
 };
 
 export const useOrganization = (): OrganizationContextType => {
-    const context = useContext(OrganizationContext);
-    if (!context) {
-        throw new Error(
-            "useOrganization must be used within an OrganizationProvider"
-        );
-    }
-    return context;
+  const context = useContext(OrganizationContext);
+  if (!context) {
+    throw new Error("useOrganization must be used within an OrganizationProvider");
+  }
+  return context;
 };
