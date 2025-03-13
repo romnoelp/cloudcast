@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useUser } from "@/context/user-context";
 import {
@@ -9,32 +8,36 @@ import {
   NavigationMenuItem,
   NavigationMenuLink,
 } from "@/components/ui/navigation-menu";
-import { NavLink, roleToLinks } from "@/types/navigation"; 
+import { NavLink, roleToLinks } from "@/types/navigation";
 
 const Navigator = () => {
   const { role, loading } = useUser();
   const pathname = usePathname();
 
-  if (loading) return null; 
+  if (loading) return null;
 
   const links: NavLink[] = role ? roleToLinks[role] || [] : [];
 
   return (
     <NavigationMenu>
       <NavigationMenuList>
-        {links.map((link) => (
-          <NavigationMenuItem key={link.href}>
-            <Link href={link.href} legacyBehavior passHref>
+        {links.map(({ href, name }) => {
+          const isActive = pathname === href;
+          const linkClassNames = `text-sm font-medium transition-colors hover:text-primary ${
+            isActive ? "text-primary" : "text-muted-foreground"
+          }`;
+
+          return (
+            <NavigationMenuItem key={href}>
               <NavigationMenuLink
-                className={`text-sm font-medium transition-colors hover:text-primary ${
-                  pathname === link.href ? "text-primary" : "text-muted-foreground"
-                }`}
+                href={href}
+                className={linkClassNames}
               >
-                {link.name}
+                {name}
               </NavigationMenuLink>
-            </Link>
-          </NavigationMenuItem>
-        ))}
+            </NavigationMenuItem>
+          );
+        })}
       </NavigationMenuList>
     </NavigationMenu>
   );

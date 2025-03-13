@@ -1,55 +1,17 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import {
-  ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table"
+import { fetchUsers } from "./_fetching/fetch-users"
+import { ColumnDef, SortingState, ColumnFiltersState, VisibilityState, flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table"
 import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react"
-
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { createClient } from "@/lib/supabase/client"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useOrganization } from "@/context/organization-context"
-import Image from "next/image"  // Import the Image component
-
-// Define the User type
-type User = {
-  user_id: string;
-  user_name: string;
-  user_email: string;
-  user_avatar_url?: string;  // Optional field
-  status: "active" | "inactive";  // Assuming these are the possible statuses
-  role: string;  // Assuming role is a string, adjust as needed
-}
-
-const supabase = createClient()
+import Image from "next/image"
+import { User } from "./_fetching/users"
 
 const UsersTable = () => {
   const { selectedOrg } = useOrganization()
@@ -59,19 +21,32 @@ const UsersTable = () => {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = useState({})
 
+  const [loading, setLoading] = useState<boolean>(false)
+  const [filterValue, setFilterValue] = useState<string>("")
+
   useEffect(() => {
     if (!selectedOrg) return
-    const fetchUsers = async () => {
-      const { data, error } = await supabase.rpc("get_organization_members", {
-        org_id: selectedOrg.id,
-      })
-      if (error) console.error("Error fetching users:", error)
-      else setUsers(data || [])
-    }
-    fetchUsers()
-  }, [selectedOrg])
 
-  const columns: ColumnDef<User>[] = [  // Use User type here
+    const fetchUserData = async () => {
+      setLoading(true)
+      
+      const { data, error } = await fetchUsers(
+        selectedOrg.id,      
+      )
+      
+      if (error) {
+        console.error("Error fetching users:", error)
+      } else {
+        setUsers(data || []) 
+      }
+
+      setLoading(false)
+    }
+
+    fetchUserData()
+  }, [selectedOrg, filterValue, sorting, columnFilters]) 
+
+  const columns: ColumnDef<User>[] = [
     {
       id: "select",
       header: ({ table }) => (
@@ -98,8 +73,8 @@ const UsersTable = () => {
         <Image
           src={row.original.user_avatar_url || "/default-avatar.png"}
           alt="Avatar"
-          width={40}  // Set width to 40px (same as the original w-10)
-          height={40} // Set height to 40px (same as the original h-10)
+          width={40}
+          height={40}
           className="rounded-full"
         />
       ),
@@ -186,10 +161,8 @@ const UsersTable = () => {
       <div className="flex items-center py-4">
         <Input
           placeholder="Filter emails..."
-          value={(table.getColumn("user_email")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("user_email")?.setFilterValue(event.target.value)
-          }
+          value={filterValue}
+          onChange={(event) => setFilterValue(event.target.value)}
           className="max-w-sm"
         />
         <DropdownMenu>
@@ -231,7 +204,13 @@ const UsersTable = () => {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows.length ? (
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-24 text-center">
+                  Loading...
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
                   {row.getVisibleCells().map((cell) => (

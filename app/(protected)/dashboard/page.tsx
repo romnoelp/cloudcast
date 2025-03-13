@@ -17,7 +17,11 @@ const DashboardRedirect = () => {
         employee: "/dashboard/employee",
       };
 
-      router.replace(role ? roleToDashboard[role] || "/dashboard/employee" : "/dashboard/employee");
+      router.replace(
+        role
+          ? roleToDashboard[role] || "/dashboard/employee"
+          : "/dashboard/employee"
+      );
     }
   }, [role, loading, router]);
 
@@ -42,7 +46,10 @@ const DashboardRedirect = () => {
         {Array(4)
           .fill(null)
           .map((_, index) => (
-            <div key={index} className="p-4 rounded-lg border shadow-sm space-y-2">
+            <div
+              key={index}
+              className="p-4 rounded-lg border shadow-sm space-y-2"
+            >
               <Skeleton className="h-4 w-32" />
               <Skeleton className="h-8 w-24" />
               <Skeleton className="h-4 w-40" />

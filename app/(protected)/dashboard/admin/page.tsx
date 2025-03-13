@@ -21,22 +21,42 @@ export default function AdminPage() {
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="analytics" disabled>Analytics</TabsTrigger>
-          <TabsTrigger value="reports" disabled>Reports</TabsTrigger>
-          <TabsTrigger value="notifications" disabled>Notifications</TabsTrigger>
+          <TabsTrigger value="analytics" disabled>
+            Analytics
+          </TabsTrigger>
+          <TabsTrigger value="reports" disabled>
+            Reports
+          </TabsTrigger>
+          <TabsTrigger value="notifications" disabled>
+            Notifications
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {[
               { title: "testData", value: "testStatic", change: "Anotha one" },
-              { title: "Total Users", value: "testValue", change: "+ 20 users since last month" },
-              { title: "Total files", value: "+ 56 files", change: "+ 24 files since last week" },
-              { title: "Active users", value: "30 organization members", change: "+ 20 since last hour" },
+              {
+                title: "Total Users",
+                value: "testValue",
+                change: "+ 20 users since last month",
+              },
+              {
+                title: "Total files",
+                value: "+ 56 files",
+                change: "+ 24 files since last week",
+              },
+              {
+                title: "Active users",
+                value: "30 organization members",
+                change: "+ 20 since last hour",
+              },
             ].map((stat, index) => (
               <Card key={index}>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    {stat.title}
+                  </CardTitle>
                   <span className="h-4 w-4 text-muted-foreground">📊</span>
                 </CardHeader>
                 <CardContent>
@@ -60,7 +80,9 @@ export default function AdminPage() {
             <Card className="col-span-3">
               <CardHeader>
                 <CardTitle>Current active administrators</CardTitle>
-                <CardDescription>These members are the ones maintaining CloudCast</CardDescription>
+                <CardDescription>
+                  These members are the ones maintaining CloudCast
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <RecentSales />
