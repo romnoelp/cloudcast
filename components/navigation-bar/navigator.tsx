@@ -21,7 +21,7 @@ const Navigator = () => {
   return (
     <NavigationMenu>
       <NavigationMenuList>
-        {links.map(({ href, name }) => {
+        {links.map(({ href, name }: NavLink) => {
           const isActive = pathname === href;
           const linkClassNames = `text-sm font-medium transition-colors hover:text-primary ${
             isActive ? "text-primary" : "text-muted-foreground"
@@ -29,10 +29,7 @@ const Navigator = () => {
 
           return (
             <NavigationMenuItem key={href}>
-              <NavigationMenuLink
-                href={href}
-                className={linkClassNames}
-              >
+              <NavigationMenuLink href={href} className={linkClassNames}>
                 {name}
               </NavigationMenuLink>
             </NavigationMenuItem>

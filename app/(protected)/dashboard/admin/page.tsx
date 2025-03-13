@@ -10,6 +10,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Overview } from "@/components/dashboard/overview";
 import RecentSales from "@/components/dashboard/recent-sales";
+import { Badge } from "@/components/ui/badge"; // ✅ Import Badge
 
 export default function AdminPage() {
   return (
@@ -35,21 +36,29 @@ export default function AdminPage() {
         <TabsContent value="overview" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {[
-              { title: "testData", value: "testStatic", change: "Anotha one" },
+              {
+                title: "testData",
+                value: "testStatic",
+                change: "Anotha one",
+                status: "pending",
+              },
               {
                 title: "Total Users",
                 value: "testValue",
                 change: "+ 20 users since last month",
+                status: "active",
               },
               {
                 title: "Total files",
                 value: "+ 56 files",
                 change: "+ 24 files since last week",
+                status: "warning",
               },
               {
                 title: "Active users",
                 value: "30 organization members",
                 change: "+ 20 since last hour",
+                status: "success",
               },
             ].map((stat, index) => (
               <Card key={index}>
@@ -57,7 +66,8 @@ export default function AdminPage() {
                   <CardTitle className="text-sm font-medium">
                     {stat.title}
                   </CardTitle>
-                  <span className="h-4 w-4 text-muted-foreground">📊</span>
+                  {/* ✅ All badges use "default" */}
+                  <Badge variant="default">{stat.status}</Badge>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stat.value}</div>

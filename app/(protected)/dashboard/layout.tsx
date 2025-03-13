@@ -3,7 +3,7 @@ import { Search } from "@/components/navigation-bar/search";
 import { Navigator } from "@/components/navigation-bar/navigator";
 import TeamSwitcher from "@/components/navigation-bar/team-switcher";
 import User from "@/components/navigation-bar/user";
-import ThemeToggle from "@/components/navigation-bar/theme-toggle"; 
+import ThemeToggle from "@/components/navigation-bar/theme-toggle";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
@@ -16,7 +16,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
           <div className="ml-auto flex items-center space-x-4">
             <Search />
-            <ThemeToggle /> 
+            <ThemeToggle />
             <User />
           </div>
         </div>

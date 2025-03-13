@@ -11,7 +11,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { UserContextType } from "@/types/user-context";
 import type { User } from "@/types/user";
 import type { SupabaseSession, UserRole } from "@/types/authentication";
-import { toast } from "sonner"; 
+import { toast } from "sonner";
 
 const UserContext = createContext<UserContextType>({
   user: null,
@@ -36,7 +36,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     } = await supabase.auth.getSession();
     if (sessionError) {
       console.error("Error getting session:", sessionError);
-      toast.error("Error retrieving session. Please try again."); 
+      toast.error("Error retrieving session. Please try again.");
     }
 
     setSession(session);
@@ -50,18 +50,23 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
     const { data, error } = await supabase
       .from("users")
-      .select("id, email, role, name, avatar_url")
+      .select("id, email, name, avatar_url") // Removed role from here
       .eq("id", session.user.id)
       .single();
 
     if (error) {
       console.error("Error fetching user:", error);
-      toast.error("Error fetching user data. Please try again."); 
+      toast.error("Error fetching user data. Please try again.");
       setUser(null);
       setRole(null);
     } else {
-      setUser(data);
-      setRole(data.role ?? "No Role Defined");
+      // Get role from cookie
+      const roleCookie = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("userRole="))
+        ?.split("=")[1];
+      setUser({ ...data, role: (roleCookie as UserRole) || "No Role Defined" }); // Added role here
+      setRole((roleCookie as UserRole) || "No Role Defined");
     }
 
     setLoading(false);
