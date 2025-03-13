@@ -1,14 +1,10 @@
-import { NextResponse, NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
 export const handleAuthSession = async (
   request: NextRequest,
   supabase: ReturnType<typeof createServerClient>
 ) => {
-  const supabaseResponse = NextResponse.next({ request });
-
-  const roleCookie = request.cookies.get("userRole")?.value;
-
   const {
     data: { user },
     error: userError,
@@ -18,39 +14,30 @@ export const handleAuthSession = async (
     return NextResponse.redirect(new URL("/signin", request.nextUrl));
   }
 
-  if (roleCookie) {
-    if (roleCookie === "admin" && request.nextUrl.pathname.startsWith("/dashboard/admin/")) {
-      return supabaseResponse;
-    } else if (roleCookie === "product-manager" && request.nextUrl.pathname.startsWith("/dashboard/product-manager/")) {
-      return supabaseResponse;
-    } else if (roleCookie === "employee" && request.nextUrl.pathname.startsWith("/dashboard/employee/")) {
-      return supabaseResponse;
-    } else {
-      return NextResponse.redirect(new URL("/unauthorized", request.nextUrl));
-    }
+  const role = user.user_metadata?.role;
+  const path = request.nextUrl.pathname;
+
+  console.log("Middleware: User Role:", role);
+  console.log("Middleware: Request Path:", path);
+  console.log("Middleware: Raw Path:", path); // Added raw path log
+
+  if (!role) {
+    console.error("User role not found in session metadata.");
+    return NextResponse.redirect(new URL("/error", request.nextUrl));
+  }
+
+  // 1. Strict Equality Check with Logging
+  if (role === "admin" && path === "/dashboard/admin") {
+    console.log("Middleware: Admin Path Match (Exact)");
+    return NextResponse.next();
+  } else if (role === "product-manager" && path.startsWith("/dashboard/product-manager/")) {
+    console.log("Middleware: Product Manager Path Match (StartsWith)");
+    return NextResponse.next();
+  } else if (role === "employee" && path.startsWith("/dashboard/employee/")) {
+    console.log("Middleware: Employee Path Match (StartsWith)");
+    return NextResponse.next();
   } else {
-    const { data: userData, error: roleError } = await supabase
-      .from("users")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (roleError || !userData?.role) {
-      return NextResponse.redirect(new URL("/error", request.nextUrl));
-    }
-
-    const role = userData.role;
-    const roleToDashboard: Record<string, string> = {
-      admin: "/dashboard/admin",
-      "product-manager": "/dashboard/product-manager",
-      employee: "/dashboard/employee",
-    };
-
-    const targetPath = roleToDashboard[role] || "/dashboard/employee";
-    const response = NextResponse.redirect(
-      new URL(targetPath, request.nextUrl)
-    );
-    response.cookies.set("userRole", role);
-    return response;
+    console.log("Middleware: No Match, Redirecting to /unauthorized");
+    return NextResponse.redirect(new URL("/unauthorized", request.nextUrl));
   }
 };

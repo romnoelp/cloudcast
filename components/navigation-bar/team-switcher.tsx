@@ -66,7 +66,6 @@ const TeamSwitcher: React.FC = () => {
     setLoading(true);
 
     try {
-      // ✅ Step 1: Insert into `organizations` table
       const { data: orgData, error: orgError } = await supabase
         .from("organizations")
         .insert([

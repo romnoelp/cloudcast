@@ -8,7 +8,7 @@ export const GET = async (request: Request) => {
 
   if (!code) {
     console.error("❌ No authorization code received.");
-    return NextResponse.redirect(`${origin}/auth/auth-code-error`);
+    return NextResponse.redirect(`${origin}/general-error?error=no_code`);
   }
 
   console.log("🔹 Authorization code received:", code);
@@ -18,10 +18,10 @@ export const GET = async (request: Request) => {
 
   if (error) {
     console.error("❌ Error exchanging code for session:", error);
-    return NextResponse.redirect(`${origin}/auth/auth-code-error`);
+    return NextResponse.redirect(`${origin}/general-error?error=exchange_failed`);
   }
 
-  // Fetch user role
+  // Fetch user role and update session metadata
   const { data: userData, error: roleError } = await supabase
     .from("users")
     .select("role")
@@ -30,10 +30,20 @@ export const GET = async (request: Request) => {
 
   if (roleError || !userData?.role) {
     console.error("Error fetching user role:", roleError);
-    return NextResponse.redirect(`${origin}/error`);
+    return NextResponse.redirect(`${origin}/general-error?error=role_fetch_failed`);
   }
 
   const role = userData.role;
+
+  // Update session metadata with the role
+  const { error: updateError } = await supabase.auth.updateUser({
+    data: { role: role },
+  });
+
+  if (updateError) {
+    console.error("Error updating user metadata:", updateError);
+    return NextResponse.redirect(`${origin}/general-error?error=metadata_update_failed`);
+  }
 
   const roleToDashboard: Record<string, string> = {
     admin: "/dashboard/admin",
@@ -41,10 +51,17 @@ export const GET = async (request: Request) => {
     employee: "/dashboard/employee",
   };
 
-  const targetPath = role ? roleToDashboard[role] || "/dashboard/employee" : "/dashboard/employee";
+  const targetPath = roleToDashboard[role] || "/dashboard/employee";
 
   const response = NextResponse.redirect(new URL(`${targetPath}`, origin));
-  response.cookies.set("userRole", role);
+
+  response.cookies.set("userRole", role, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 600, 
+  });
 
   console.log("✅ Session successfully exchanged! Redirecting to:", targetPath);
   return response;

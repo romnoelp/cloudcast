@@ -14,25 +14,23 @@ export const middleware = async (request: NextRequest) => {
       }
     );
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError) {
-      console.error("Supabase auth error:", userError);
-    }
+    const response = await handleAuthSession(request, supabase);
 
     if (request.nextUrl.pathname === "/") {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       return user
         ? NextResponse.redirect(new URL("/dashboard", request.nextUrl))
         : NextResponse.redirect(new URL("/signin", request.nextUrl));
     }
 
-    return await handleAuthSession(request, supabase);
+    return response;
+
   } catch (error) {
     console.error("Middleware error:", error);
-    return NextResponse.redirect(new URL("/error", request.nextUrl));
+    return NextResponse.redirect(new URL(`/error?message=${encodeURIComponent(String(error))}`, request.nextUrl));
   }
 };
 
