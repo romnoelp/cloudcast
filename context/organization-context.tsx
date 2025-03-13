@@ -2,113 +2,118 @@
 
 import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Organization, OrganizationContextType } from "@/types/selected-organization";
+import {
+  Organization,
+  OrganizationContextType,
+} from "@/types/selected-organization";
 import { useUser } from "@/context/user-context";
 
 const OrganizationContext = createContext<OrganizationContextType>({
-    selectedOrg: null,
-    setSelectedOrg: () => {},
-    organizations: [], // Corrected: Initialize with an empty array
-    loading: false,
+  selectedOrg: null,
+  setSelectedOrg: () => {},
+  organizations: [],
+  loading: false,
 });
 
 export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
-    children,
+  children,
 }) => {
-    const supabase = createClient();
-    const { user, loading: userLoading } = useUser();
-    const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
-    const [organizations, setOrganizations] = useState<Organization[]>([]); // Corrected: Initialize as Organization[]
-    const [loading, setLoading] = useState(true);
-    const hasFetched = useRef(false);
-    const [error, setError] = useState<Error | null>(null);
+  const supabase = createClient();
+  const { user, loading: userLoading } = useUser();
+  const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [loading, setLoading] = useState(true);
+  const hasFetched = useRef(false);
+  const [error, setError] = useState<Error | null>(null);
 
-    useEffect(() => {
-        if (userLoading || !user || hasFetched.current) return;
-        hasFetched.current = true;
+  useEffect(() => {
+    if (userLoading || !user || hasFetched.current) return;
+    hasFetched.current = true;
 
-        const fetchOrganizations = async () => {
-            setLoading(true);
-            setError(null);
+    const fetchOrganizations = async () => {
+      setLoading(true);
+      setError(null);
 
-            try {
-                const { data, error: supabaseError } = await supabase
-                    .from("organization_members")
-                    .select("organizations!inner(id, name, description, created_by)");
+      try {
+        const { data, error: supabaseError } = await supabase
+          .from("organization_members")
+          .select("organizations!inner(id, name, description, created_by)")
+          .eq("user_id", user.id);
 
-                if (supabaseError) {
-                    console.error("Error fetching organizations:", supabaseError);
-                    setError(supabaseError);
-                    setOrganizations([]); // Corrected: Pass an empty array
-                } else {
-                    if (data) {
-                        console.log("OrganizationContext Supabase data:", data);
-
-                        // Assuming 'data' is an array of objects with 'organizations' property
-                        const extractedOrganizations: Organization[] = data.flatMap(
-                            (entry) => entry.organizations
-                        );
-                        setOrganizations(extractedOrganizations);
-                    } else {
-                        setOrganizations([]); // Corrected: Pass an empty array
-                    }
-                }
-            } catch (err) {
-                const e = err as Error;
-                console.error("Unexpected error fetching organizations:", e);
-                setError(e);
-                setOrganizations([]); // Corrected: Pass an empty array
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchOrganizations();
-    }, [user, userLoading, supabase]);
-
-    useEffect(() => {
-        const storedOrg = localStorage.getItem("selectedOrg");
-        if (storedOrg) {
-            try {
-                setSelectedOrg(JSON.parse(storedOrg));
-            } catch (e) {
-                console.error("Error parsing selectedOrg from localStorage:", e);
-                localStorage.removeItem("selectedOrg");
-            }
+        if (supabaseError) {
+          console.error("Error fetching organizations:", supabaseError);
+          setError(supabaseError);
+          setOrganizations([]);
+          return;
         }
-    }, []);
 
-    useEffect(() => {
-        if (selectedOrg) {
-            localStorage.setItem("selectedOrg", JSON.stringify(selectedOrg));
-        } else {
-            localStorage.removeItem("selectedOrg");
+        if (!data) {
+          setOrganizations([]);
+          return;
         }
-    }, [selectedOrg]);
 
-    const contextValue: OrganizationContextType = {
-        selectedOrg,
-        setSelectedOrg,
-        organizations,
-        loading,
+        const extractedOrganizations: Organization[] = data.flatMap(
+          (entry) => entry.organizations
+        );
+        setOrganizations(extractedOrganizations);
+      } catch (err) {
+        const e = err as Error;
+        console.error("Unexpected error fetching organizations:", e);
+        setError(e);
+        setOrganizations([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    return (
-        <OrganizationContext.Provider value={contextValue}>
-            {children}
-            {error && (
-                <div style={{ color: "red", marginTop: "10px" }}>
-                    Error fetching organizations: {error.message}
-                </div>
-            )}
-        </OrganizationContext.Provider>
-    );
+    fetchOrganizations();
+  }, [user, userLoading, supabase]);
+
+  useEffect(() => {
+    const storedOrg = localStorage.getItem("selectedOrg");
+    if (!storedOrg) return;
+
+    try {
+      setSelectedOrg(JSON.parse(storedOrg));
+    } catch (e) {
+      console.error("Error parsing selectedOrg from localStorage:", e);
+      localStorage.removeItem("selectedOrg");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (selectedOrg) {
+      localStorage.setItem("selectedOrg", JSON.stringify(selectedOrg));
+    } else {
+      localStorage.removeItem("selectedOrg");
+    }
+  }, [selectedOrg]);
+
+  const contextValue: OrganizationContextType = {
+    selectedOrg,
+    setSelectedOrg,
+    organizations,
+    loading,
+  };
+
+  return (
+    <OrganizationContext.Provider value={contextValue}>
+      {children}
+      {error && (
+        <div style={{ color: "red", marginTop: "10px" }}>
+          Error fetching organizations: {error.message}
+        </div>
+      )}
+    </OrganizationContext.Provider>
+  );
 };
 
 export const useOrganization = (): OrganizationContextType => {
   const context = useContext(OrganizationContext);
   if (!context) {
-    throw new Error("useOrganization must be used within an OrganizationProvider");
+    throw new Error(
+      "useOrganization must be used within an OrganizationProvider"
+    );
   }
   return context;
 };

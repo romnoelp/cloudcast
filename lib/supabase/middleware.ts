@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { roleToLinks } from "@/types/navigation";
 
 export const handleAuthSession = async (
   request: NextRequest,
@@ -11,33 +12,53 @@ export const handleAuthSession = async (
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
+    console.log("Middleware: User or userError - Redirecting to /signin");
     return NextResponse.redirect(new URL("/signin", request.nextUrl));
   }
 
-  const role = user.user_metadata?.role;
+  const role = request.cookies.get("userRole")?.value;
   const path = request.nextUrl.pathname;
 
-  console.log("Middleware: User Role:", role);
+  console.log("Middleware: User Role (from cookie):", role);
   console.log("Middleware: Request Path:", path);
-  console.log("Middleware: Raw Path:", path); // Added raw path log
+  console.log("Middleware: Raw Path:", path);
 
   if (!role) {
-    console.error("User role not found in session metadata.");
+    console.error("Middleware: User role not found - Redirecting to /error");
     return NextResponse.redirect(new URL("/error", request.nextUrl));
   }
 
-  // 1. Strict Equality Check with Logging
-  if (role === "admin" && path === "/dashboard/admin") {
-    console.log("Middleware: Admin Path Match (Exact)");
-    return NextResponse.next();
-  } else if (role === "product-manager" && path.startsWith("/dashboard/product-manager/")) {
-    console.log("Middleware: Product Manager Path Match (StartsWith)");
-    return NextResponse.next();
-  } else if (role === "employee" && path.startsWith("/dashboard/employee/")) {
-    console.log("Middleware: Employee Path Match (StartsWith)");
-    return NextResponse.next();
-  } else {
-    console.log("Middleware: No Match, Redirecting to /unauthorized");
+  const allowedLinks = roleToLinks[role as keyof typeof roleToLinks];
+
+  if (!allowedLinks) {
+    console.error(
+      "Middleware: No allowed links found for role",
+      role,
+      "- Redirecting to /error"
+    );
+    return NextResponse.redirect(new URL("/error", request.nextUrl));
+  }
+
+  let isAllowed = false;
+
+  for (const link of allowedLinks) {
+    if (link.href === path || path.startsWith(link.href + "/")) {
+      isAllowed = true;
+      break;
+    }
+  }
+
+  if (!isAllowed) {
+    console.log(
+      "Middleware: Role",
+      role,
+      "is NOT allowed to access",
+      path,
+      "- Redirecting to /unauthorized"
+    );
     return NextResponse.redirect(new URL("/unauthorized", request.nextUrl));
   }
+
+  console.log("Middleware: Role", role, "is allowed to access", path);
+  return NextResponse.next();
 };

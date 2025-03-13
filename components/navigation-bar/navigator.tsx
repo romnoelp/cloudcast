@@ -7,7 +7,7 @@ import {
     NavigationMenuList,
     NavigationMenuItem,
 } from "@/components/ui/navigation-menu";
-import { NavLink, roleToLinks } from "@/types/navigation";
+import { NavLink, Role, roleToLinks } from "@/types/navigation";
 import Link from "next/link";
 
 const Navigator = () => {
@@ -16,14 +16,13 @@ const Navigator = () => {
 
     if (loading) return null;
 
-    const links: NavLink[] = role ? roleToLinks[role] || [] : [];
+    const links: NavLink[] = role ? roleToLinks[role as Role] || [] : [];
 
     return (
         <NavigationMenu>
             <NavigationMenuList>
                 {links.map(({ href, name }: NavLink) => {
                     const isActive = pathname === href;
-                    // Modified linkClassNames to apply primary color when active
                     const linkClassNames = `
                         text-sm
                         font-medium

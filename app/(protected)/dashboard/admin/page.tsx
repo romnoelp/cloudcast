@@ -10,7 +10,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Overview } from "@/components/dashboard/overview";
 import RecentSales from "@/components/dashboard/recent-sales";
-import { Badge } from "@/components/ui/badge"; // ✅ Import Badge
+import { Badge } from "@/components/ui/badge";
 
 export default function AdminPage() {
   return (
