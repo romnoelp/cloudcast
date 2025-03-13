@@ -19,11 +19,11 @@ export const handleAuthSession = async (
   }
 
   if (roleCookie) {
-    if (roleCookie === "admin" && request.nextUrl.pathname.startsWith("/dashboard/admin/")) {
+    if (roleCookie === "admin" && request.nextUrl.pathname.startsWith("/dashboard/admin")) {
       return supabaseResponse;
-    } else if (roleCookie === "product-manager" && request.nextUrl.pathname.startsWith("/dashboard/product-manager/")) {
+    } else if (roleCookie === "product-manager" && request.nextUrl.pathname.startsWith("/dashboard/product-manager")) {
       return supabaseResponse;
-    } else if (roleCookie === "employee" && request.nextUrl.pathname.startsWith("/dashboard/employee/")) {
+    } else if (roleCookie === "employee" && request.nextUrl.pathname.startsWith("/dashboard/employee")) {
       return supabaseResponse;
     } else {
       return NextResponse.redirect(new URL("/unauthorized", request.nextUrl));

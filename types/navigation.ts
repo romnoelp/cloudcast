@@ -1,4 +1,7 @@
+import { JSX } from "react";
+
 export type NavLink = {
+  map(arg0: ({ href, name }: NavLink) => JSX.Element): import("react").ReactNode;
   name: string;
   href: string;
 };

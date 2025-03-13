@@ -6,9 +6,9 @@ import {
   NavigationMenu,
   NavigationMenuList,
   NavigationMenuItem,
-  NavigationMenuLink,
 } from "@/components/ui/navigation-menu";
 import { NavLink, roleToLinks } from "@/types/navigation";
+import Link from "next/link";
 
 const Navigator = () => {
   const { role, loading } = useUser();
@@ -23,15 +23,20 @@ const Navigator = () => {
       <NavigationMenuList>
         {links.map(({ href, name }: NavLink) => {
           const isActive = pathname === href;
-          const linkClassNames = `text-sm font-medium transition-colors hover:text-primary ${
-            isActive ? "text-primary" : "text-muted-foreground"
-          }`;
+          const linkClassNames = `
+                        text-sm
+                        font-medium
+                        transition-colors
+                        mx-4
+                        hover:text-primary
+                        ${isActive ? "text-primary" : "text-muted-foreground"}
+                    `;
 
           return (
             <NavigationMenuItem key={href}>
-              <NavigationMenuLink href={href} className={linkClassNames}>
+              <Link href={href} className={linkClassNames}>
                 {name}
-              </NavigationMenuLink>
+              </Link>
             </NavigationMenuItem>
           );
         })}
