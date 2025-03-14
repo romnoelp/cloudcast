@@ -14,21 +14,44 @@ export const middleware = async (request: NextRequest) => {
       }
     );
 
-    const response = await handleAuthSession(request, supabase);
+    if (request.nextUrl.pathname === "/") {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-    if (request.nextUrl.pathname !== "/") {
+      if (!user) {
+        return NextResponse.redirect(new URL("/signin", request.nextUrl));
+      }
+
+      // Fetch user role from database
+      const { data: userData, error: roleError } = await supabase
+        .from("users")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      if (roleError || !userData?.role) {
+        console.error("Error fetching user role:", roleError);
+        return NextResponse.redirect(new URL("/error", request.nextUrl));
+      }
+
+      const role = userData.role;
+
+      const response = NextResponse.redirect(
+        new URL("/dashboard", request.nextUrl)
+      );
+      response.cookies.set("userRole", role, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 600,
+      });
+
       return response;
     }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.redirect(new URL("/signin", request.nextUrl));
-    }
-
-    return NextResponse.redirect(new URL("/dashboard", request.nextUrl));
+    return await handleAuthSession(request, supabase);
   } catch (error) {
     console.error("Middleware error:", error);
     return NextResponse.redirect(
