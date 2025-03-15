@@ -1,41 +1,30 @@
-import { NextResponse, NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { NextResponse } from "next/server";
 
-export const GET = async (req: NextRequest) => {
+export const GET = async () => {
+  const supabase = await createClient(); 
+
   try {
-    const supabase = await createClient();
+    const { data: { session } } = await supabase.auth.getSession();
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError) {
-      console.error("Error getting user:", userError);
-      return NextResponse.json(
-        { error: "Unauthorized", details: userError.message },
-        { status: 401 }
-      );
-    }
-
-    if (!user) {
+    if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const role = user.user_metadata?.role;
+    const { data, error } = await supabase
+      .from("users") 
+      .select("role")
+      .eq("id", session.user.id)
+      .single();
 
-    if (!role) {
-      console.error("Role not found for user:", user);
-      return NextResponse.json({ error: "Role not found" }, { status: 404 });
+    if (error) {
+      console.error("Error fetching user role:", error);
+      return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 
-    console.log("User role:", { role });
-    return NextResponse.json({ role });
-  } catch (error) {
-    console.error("Unexpected error:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ role: data?.role });
+  } catch (err) {
+    console.error("API error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 };

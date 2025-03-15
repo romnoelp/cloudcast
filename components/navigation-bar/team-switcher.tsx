@@ -139,7 +139,7 @@ const TeamSwitcher: React.FC = () => {
       // ✅ Check if user already has a pending request
       const { data: existingRequest, error: requestError } = await supabase
         .from("organization_members")
-        .select("id, status")
+        .select("status")
         .eq("organization_id", org.id)
         .eq("user_id", user?.id)
         .single();

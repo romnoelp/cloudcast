@@ -1,57 +1,144 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { fetchUsers } from "./_fetching/fetch-users"
-import { ColumnDef, SortingState, ColumnFiltersState, VisibilityState, flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { useOrganization } from "@/context/organization-context"
-import Image from "next/image"
-import { User } from "./_fetching/users"
+import { useState, useEffect } from "react";
+import { fetchUsers } from "./_fetching/fetch-users"; // Import fetchUsers
+import {
+  ColumnDef,
+  SortingState,
+  ColumnFiltersState,
+  VisibilityState,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useOrganization } from "@/context/organization-context";
+import Image from "next/image";
+import { User } from "./_fetching/users";
+import { toast } from "sonner";
 
 const UsersTable = () => {
-  const { selectedOrg } = useOrganization()
-  const [users, setUsers] = useState<User[]>([]) 
-  const [sorting, setSorting] = useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-  const [rowSelection, setRowSelection] = useState({})
+  const { selectedOrg } = useOrganization();
+  const [users, setUsers] = useState<User[]>([]);
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = useState({});
 
-  const [loading, setLoading] = useState<boolean>(false)
-  const [filterValue, setFilterValue] = useState<string>("")
+  const [loading, setLoading] = useState<boolean>(false);
+  const [filterValue, setFilterValue] = useState<string>("");
+  const fetchUserData = async () => {
+    if (!selectedOrg) return;
 
-  useEffect(() => {
-    if (!selectedOrg) return
+    setLoading(true);
 
-    const fetchUserData = async () => {
-      setLoading(true)
-      
-      const { data, error } = await fetchUsers(
-        selectedOrg.id,      
-      )
-      
-      if (error) {
-        console.error("Error fetching users:", error)
-      } else {
-        setUsers(data || []) 
-      }
+    const { data, error } = await fetchUsers(selectedOrg.id); 
 
-      setLoading(false)
+    if (error) {
+      console.error("Error fetching users:", error);
+    } else {
+      setUsers(data || []);
     }
 
-    fetchUserData()
-  }, [selectedOrg, filterValue, sorting, columnFilters]) 
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchUserData();
+  }, [selectedOrg, filterValue, sorting, columnFilters]);
+
+  const handleAcceptUser = async (userId: string, userName: string) => {
+    try {
+      const response = await fetch("/api/accept-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, orgId: selectedOrg?.id }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to accept user");
+      }
+
+      toast.success(`${userName} accepted successfully!`);
+      fetchUserData();
+    } catch (error) {
+      console.error("Error accepting user:", error);
+      toast.error(`Failed to accept ${userName}.`);
+    }
+  };
+
+  const handleRejectUser = async (userId: string, userName: string) => {
+    try {
+      const response = await fetch("/api/reject-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, orgId: selectedOrg?.id }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to reject user");
+      }
+
+      toast.success(`${userName} rejected successfully!`);
+      fetchUserData();
+    } catch (error) {
+      console.error("Error rejecting user:", error);
+      toast.error(`Failed to reject ${userName}.`);
+    }
+  };
+
+  const handleRemoveUser = async (userId: string, userName: string) => {
+    try {
+      const response = await fetch("/api/remove-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, orgId: selectedOrg?.id }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to remove user");
+      }
+
+      toast.success(`${userName} removed successfully!`);
+      fetchUserData();
+    } catch (error) {
+      console.error("Error removing user:", error);
+      toast.error(`Failed to remove ${userName}.`);
+    }
+  };
 
   const columns: ColumnDef<User>[] = [
     {
       id: "select",
       header: ({ table }) => (
         <Checkbox
-          checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
           aria-label="Select all"
         />
@@ -67,7 +154,7 @@ const UsersTable = () => {
       enableHiding: false,
     },
     {
-      accessorKey: "user_avatar_url", 
+      accessorKey: "user_avatar_url",
       header: "Avatar",
       cell: ({ row }) => (
         <Image
@@ -80,12 +167,14 @@ const UsersTable = () => {
       ),
     },
     {
-      accessorKey: "user_name",  
+      accessorKey: "user_name",
       header: "Name",
-      cell: ({ row }) => <span className="font-medium">{row.original.user_name}</span>,
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.user_name}</span>
+      ),
     },
     {
-      accessorKey: "user_email", 
+      accessorKey: "user_email",
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -94,18 +183,24 @@ const UsersTable = () => {
           Email <ArrowUpDown />
         </Button>
       ),
-      cell: ({ row }) => <span className="lowercase">{row.original.user_email}</span>,
+      cell: ({ row }) => (
+        <span className="lowercase">{row.original.user_email}</span>
+      ),
     },
     {
-      accessorKey: "role",  
+      accessorKey: "role",
       header: "Role",
     },
     {
-      accessorKey: "status",  
+      accessorKey: "status",
       header: "Status",
       cell: ({ row }) => (
         <span
-          className={`px-2 py-1 rounded-md text-xs ${row.original.status === "active" ? "bg-green-500 text-white" : "bg-gray-300"}`}
+          className={`px-2 py-1 rounded-md text-xs ${
+            row.original.status === "active"
+              ? "bg-green-500 text-white"
+              : "bg-gray-300"
+          }`}
         >
           {row.original.status}
         </span>
@@ -114,28 +209,57 @@ const UsersTable = () => {
     {
       id: "actions",
       enableHiding: false,
-      cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <MoreHorizontal />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(row.original.user_id)}
-            >
-              Copy User ID
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>View Profile</DropdownMenuItem>
-            <DropdownMenuItem>Remove User</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
+      cell: ({ row }) => {
+        const user = row.original;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <MoreHorizontal />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              {user.status === "pending" ? (
+                <>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      handleAcceptUser(user.user_id, user.user_name)
+                    }
+                  >
+                    Accept
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      handleRejectUser(user.user_id, user.user_name)
+                    }
+                  >
+                    Reject
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <>
+                  <DropdownMenuItem
+                    onClick={() => navigator.clipboard.writeText(user.user_id)}
+                  >
+                    Copy User ID
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() =>
+                      handleRemoveUser(user.user_id, user.user_name)
+                    }
+                  >
+                    Remove User
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
     },
-  ]
+  ];
 
   const table = useReactTable({
     data: users,
@@ -154,7 +278,7 @@ const UsersTable = () => {
       columnVisibility,
       rowSelection,
     },
-  })
+  });
 
   return (
     <div className="w-full">
@@ -197,7 +321,10 @@ const UsersTable = () => {
                   <TableHead key={header.id}>
                     {header.isPlaceholder
                       ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                   </TableHead>
                 ))}
               </TableRow>
@@ -206,23 +333,35 @@ const UsersTable = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   Loading...
                 </TableCell>
               </TableRow>
             ) : table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   No users in this organization.
                 </TableCell>
               </TableRow>
@@ -235,15 +374,25 @@ const UsersTable = () => {
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} row(s) selected.
         </div>
-        <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => table.previousPage()}
+          disabled={!table.getCanPreviousPage()}
+        >
           Previous
         </Button>
-        <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => table.nextPage()}
+          disabled={!table.getCanNextPage()}
+        >
           Next
         </Button>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default UsersTable
+export default UsersTable;

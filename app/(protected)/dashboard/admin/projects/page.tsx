@@ -220,7 +220,7 @@ const ProjectsTable = () => {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem>Open Project</DropdownMenuItem>
+            <DropdownMenuItem>Open</DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => handleArchiveProject(row.original.id)}
             >
