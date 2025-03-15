@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google"; 
+import { Noto_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { UserProvider } from "@/context/user-context"; 
-import { OrganizationProvider } from "@/context/organization-context"; 
+import { UserProvider } from "@/context/user-context";
+import { OrganizationProvider } from "@/context/organization-context";
 import { Toaster } from "sonner";
 
-const inter = Inter({
-  variable: "--font-inter",
+const notoSans = Noto_Sans({
+  weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
+  variable: "--font-noto-sans",
 });
 
 export const metadata: Metadata = {
@@ -23,7 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} antialiased`}>
+      <body className={`${notoSans.variable} antialiased`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -31,9 +32,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <UserProvider>
-            <OrganizationProvider>  
-              {children}
-            </OrganizationProvider>
+            <OrganizationProvider>{children}</OrganizationProvider>
           </UserProvider>
           <Toaster />
         </ThemeProvider>
