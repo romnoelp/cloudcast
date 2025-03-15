@@ -6,4 +6,5 @@ export type Project = {
     created_by: string;
     created_at: string;
     status: "active" | "archived" | string;
-}
+    members: number; 
+};
