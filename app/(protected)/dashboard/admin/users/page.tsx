@@ -15,7 +15,7 @@ import { User } from "./_fetching/users"
 
 const UsersTable = () => {
   const { selectedOrg } = useOrganization()
-  const [users, setUsers] = useState<User[]>([])  // Use User type here
+  const [users, setUsers] = useState<User[]>([]) 
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -67,7 +67,7 @@ const UsersTable = () => {
       enableHiding: false,
     },
     {
-      accessorKey: "user_avatar_url",  // Match field name with User type
+      accessorKey: "user_avatar_url", 
       header: "Avatar",
       cell: ({ row }) => (
         <Image
@@ -80,12 +80,12 @@ const UsersTable = () => {
       ),
     },
     {
-      accessorKey: "user_name",  // Match field name with User type
+      accessorKey: "user_name",  
       header: "Name",
       cell: ({ row }) => <span className="font-medium">{row.original.user_name}</span>,
     },
     {
-      accessorKey: "user_email",  // Match field name with User type
+      accessorKey: "user_email", 
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -97,11 +97,11 @@ const UsersTable = () => {
       cell: ({ row }) => <span className="lowercase">{row.original.user_email}</span>,
     },
     {
-      accessorKey: "role",  // Match field name with User type
+      accessorKey: "role",  
       header: "Role",
     },
     {
-      accessorKey: "status",  // Match field name with User type
+      accessorKey: "status",  
       header: "Status",
       cell: ({ row }) => (
         <span
@@ -223,7 +223,7 @@ const UsersTable = () => {
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No results.
+                  No users in this organization.
                 </TableCell>
               </TableRow>
             )}
