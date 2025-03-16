@@ -3,7 +3,7 @@
 import { useState, lazy, Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton"; 
 
-const LazySignIn = lazy(() => import("./lazy-signin"));
+const LazySignIn = lazy(() => import("../../app/signin/lazy-signin"));
 
 const SignInButton = () => {
     const [isLoading, setIsLoading] = useState(false);
