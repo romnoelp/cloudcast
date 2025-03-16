@@ -39,6 +39,7 @@ import ProjectTableRow from "./project-table-row";
 import ProjectCreateDialog from "./project-create-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import ProjectDetails from "@/components/projects/project-details";
 
 const ProjectTable = () => {
   const { selectedOrg } = useOrganization();
@@ -75,8 +76,6 @@ const ProjectTable = () => {
   const handleOpenProject = (projectId: string) => {
     setOpenedProjectId(projectId);
   };
-
-  
 
   const handleDeleteProject = async (projectId: string) => {
     try {
@@ -136,13 +135,12 @@ const ProjectTable = () => {
       header: "Status",
       cell: ({ row }) => (
         <span
-          className={`px-2 py-1 rounded-md text-xs ${
-            row.original.status === "active"
+          className={`px-2 py-1 rounded-md text-xs ${row.original.status === "active"
               ? "bg-green-500 text-white"
               : row.original.status === "archived"
-              ? "bg-gray-300"
-              : "bg-yellow-400"
-          }`}
+                ? "bg-gray-300"
+                : "bg-yellow-400"
+            }`}
         >
           {row.original.status}
         </span>
@@ -185,9 +183,9 @@ const ProjectTable = () => {
               error
             );
             toast.error(
-              `An error occurred while ${
-                isArchived ? "activating" : "archiving"
-              } project.`
+              `An error occurred while ${isArchived ? "activating" : "archiving"
+              } project.`// components/projects/project-table.tsx (continued)
+
             );
           }
         };
@@ -252,11 +250,10 @@ const ProjectTable = () => {
   return (
     <div className="w-full">
       {openedProjectId ? (
-        <div>
-          <h2>Project Details</h2>
-          <p>Opened Project ID: {openedProjectId}</p>
-          <Button onClick={() => setOpenedProjectId(null)}>Back to List</Button>
-        </div>
+        <ProjectDetails
+          projectId={openedProjectId}
+          onClose={() => setOpenedProjectId(null)}
+        />
       ) : (
         <>
           <div className="flex items-center py-4">
@@ -309,9 +306,9 @@ const ProjectTable = () => {
                         {header.isPlaceholder
                           ? null
                           : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                       </TableHead>
                     ))}
                   </TableRow>

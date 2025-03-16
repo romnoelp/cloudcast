@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { fetchUsers } from "./_fetching/fetch-users"; 
+import { useState, useEffect, useCallback } from "react"; // Added useCallback
+import { fetchUsers } from "./_fetching/fetch-users";
 import {
   ColumnDef,
   SortingState,
@@ -51,12 +51,13 @@ const UsersTable = () => {
 
   const [loading, setLoading] = useState<boolean>(false);
   const [filterValue, setFilterValue] = useState<string>("");
-  const fetchUserData = async () => {
+
+  const fetchUserData = useCallback(async () => { // Used useCallback here
     if (!selectedOrg) return;
 
     setLoading(true);
 
-    const { data, error } = await fetchUsers(selectedOrg.id); 
+    const { data, error } = await fetchUsers(selectedOrg.id);
 
     if (error) {
       console.error("Error fetching users:", error);
@@ -65,11 +66,11 @@ const UsersTable = () => {
     }
 
     setLoading(false);
-  };
+  }, [selectedOrg]); // Added selectedOrg as dependency
 
   useEffect(() => {
     fetchUserData();
-  }, [selectedOrg, filterValue, sorting, columnFilters]);
+  }, [fetchUserData]); // Changed dependencies to fetchUserData
 
   const handleAcceptUser = async (userId: string, userName: string) => {
     try {
@@ -111,28 +112,28 @@ const UsersTable = () => {
     }
   };
 
-   const handleRemoveUser = async (userId: string, userName: string) => {
-			try {
-				const supabase = createClient();
-				const { error } = await supabase
-					.from("organization_members")
-					.delete()
-					.match({
-						user_id: userId,
-						organization_id: selectedOrg?.id,
-					});
+  const handleRemoveUser = async (userId: string, userName: string) => {
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("organization_members")
+        .delete()
+        .match({
+          user_id: userId,
+          organization_id: selectedOrg?.id,
+        });
 
-				if (error) {
-					throw new Error("Failed to remove user");
-				}
+      if (error) {
+        throw new Error("Failed to remove user");
+      }
 
-				toast.success(`${userName} removed successfully!`);
-				fetchUserData();
-			} catch (error) {
-				console.error("Error removing user:", error);
-				toast.error(`Failed to remove ${userName}.`);
-			}
-		};
+      toast.success(`${userName} removed successfully!`);
+      fetchUserData();
+    } catch (error) {
+      console.error("Error removing user:", error);
+      toast.error(`Failed to remove ${userName}.`);
+    }
+  };
 
   const columns: ColumnDef<User>[] = [
     {
@@ -200,11 +201,10 @@ const UsersTable = () => {
       header: "Status",
       cell: ({ row }) => (
         <span
-          className={`px-2 py-1 rounded-md text-xs ${
-            row.original.status === "active"
+          className={`px-2 py-1 rounded-md text-xs ${row.original.status === "active"
               ? "bg-green-500 text-white"
               : "bg-gray-300"
-          }`}
+            }`}
         >
           {row.original.status}
         </span>
@@ -326,9 +326,9 @@ const UsersTable = () => {
                     {header.isPlaceholder
                       ? null
                       : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
                   </TableHead>
                 ))}
               </TableRow>
