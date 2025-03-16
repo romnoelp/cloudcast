@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronsUpDown, PlusCircle, Copy } from "lucide-react";
+import { Check, ChevronsUpDown, PlusCircle} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -51,10 +51,6 @@ const TeamSwitcher: React.FC = () => {
   const [generatedJoinCode] = useState(generateJoinCode());
   const [loading, setLoading] = useState(false);
 
-  const handleCopyCode = () => {
-    navigator.clipboard.writeText(generatedJoinCode);
-    toast.success("Join code copied!");
-  };
 
   // ✅ Create Organization Logic
   const handleCreateOrganization = async () => {
