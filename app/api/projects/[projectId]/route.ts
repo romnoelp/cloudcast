@@ -1,4 +1,3 @@
-// app/api/projects/[projectId]/route.ts
 import { NextResponse, NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
@@ -32,7 +31,8 @@ export const GET = async (
     }
 
     return NextResponse.json(data, { status: 200 });
-  } catch (e) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (e ) {
     return NextResponse.json(
       { error: "An unexpected server error occurred." },
       { status: 500 }

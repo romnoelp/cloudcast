@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect } from "react";
 import { useOrganization } from "@/context/organization-context";
 import { Project } from "@/types/project";
 import {
@@ -38,6 +38,7 @@ import { useUser } from "@/context/user-context";
 import ProjectTableRow from "./project-table-row";
 import ProjectCreateDialog from "./project-create-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useCallback } from "react";
 import { toast } from "sonner";
 import ProjectDetails from "@/components/projects/project-details";
 
@@ -52,26 +53,31 @@ const ProjectTable = () => {
   const [filterValue, setFilterValue] = useState<string>("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [openedProjectId, setOpenedProjectId] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { user } = useUser();
 
-  const fetchProjectsData = async () => {
+
+  const fetchProjectsData = useCallback(async () => {
     if (!selectedOrg) return;
     setLoading(true);
-    const response = await fetch(
-      `/api/projects?organizationId=${selectedOrg.id}`
-    );
-    if (!response.ok) {
-      console.error("Error fetching projects:", response.statusText);
-    } else {
-      const data = await response.json();
-      setProjects(data);
+    try {
+      const response = await fetch(`/api/projects?organizationId=${selectedOrg.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setProjects(data);
+      } else {
+        console.error("Error fetching projects:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Fetch error:", error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  };
+  }, [selectedOrg]);
 
   useEffect(() => {
     fetchProjectsData();
-  }, [selectedOrg, filterValue, sorting, columnFilters]);
+  }, [fetchProjectsData]);
 
   const handleOpenProject = (projectId: string) => {
     setOpenedProjectId(projectId);
