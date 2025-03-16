@@ -27,6 +27,7 @@ const LazySignIn: React.FC<LazySignInProps> = ({ setIsLoading, isLoading }) => {
                 },
             });
             if (error) throw error;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error("Google Sign-in Error:", error); 
             toast.error("There was an error logging in with Google.");
