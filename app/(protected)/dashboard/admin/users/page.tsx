@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { fetchUsers } from "./_fetching/fetch-users"; // Import fetchUsers
+import { fetchUsers } from "./_fetching/fetch-users"; 
 import {
   ColumnDef,
   SortingState,
@@ -39,6 +39,7 @@ import { useOrganization } from "@/context/organization-context";
 import Image from "next/image";
 import { User } from "./_fetching/users";
 import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
 
 const UsersTable = () => {
   const { selectedOrg } = useOrganization();
@@ -110,25 +111,28 @@ const UsersTable = () => {
     }
   };
 
-  const handleRemoveUser = async (userId: string, userName: string) => {
-    try {
-      const response = await fetch("/api/remove-user", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, orgId: selectedOrg?.id }),
-      });
+   const handleRemoveUser = async (userId: string, userName: string) => {
+			try {
+				const supabase = createClient();
+				const { error } = await supabase
+					.from("organization_members")
+					.delete()
+					.match({
+						user_id: userId,
+						organization_id: selectedOrg?.id,
+					});
 
-      if (!response.ok) {
-        throw new Error("Failed to remove user");
-      }
+				if (error) {
+					throw new Error("Failed to remove user");
+				}
 
-      toast.success(`${userName} removed successfully!`);
-      fetchUserData();
-    } catch (error) {
-      console.error("Error removing user:", error);
-      toast.error(`Failed to remove ${userName}.`);
-    }
-  };
+				toast.success(`${userName} removed successfully!`);
+				fetchUserData();
+			} catch (error) {
+				console.error("Error removing user:", error);
+				toast.error(`Failed to remove ${userName}.`);
+			}
+		};
 
   const columns: ColumnDef<User>[] = [
     {
