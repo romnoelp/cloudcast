@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react"; // Added useCallback
-import { fetchUsers } from "./_fetching/fetch-users";
+import { useState, useEffect, useCallback } from "react";
+import { fetchUsers, acceptUser, rejectUser, removeUser } from "./actions"; // ✅ Using server actions
 import {
   ColumnDef,
   SortingState,
@@ -37,9 +37,8 @@ import {
 } from "@/components/ui/table";
 import { useOrganization } from "@/context/organization-context";
 import Image from "next/image";
-import { User } from "./_fetching/users";
+import { User } from "./user_type";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
 
 const UsersTable = () => {
   const { selectedOrg } = useOrganization();
@@ -48,42 +47,27 @@ const UsersTable = () => {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
-
   const [loading, setLoading] = useState<boolean>(false);
   const [filterValue, setFilterValue] = useState<string>("");
 
-  const fetchUserData = useCallback(async () => { // Used useCallback here
+  const fetchUserData = useCallback(async () => {
     if (!selectedOrg) return;
 
     setLoading(true);
 
-    const { data, error } = await fetchUsers(selectedOrg.id);
-
-    if (error) {
-      console.error("Error fetching users:", error);
-    } else {
-      setUsers(data || []);
-    }
+    const data = await fetchUsers(selectedOrg.id);
+    setUsers(data || []);
 
     setLoading(false);
-  }, [selectedOrg]); // Added selectedOrg as dependency
+  }, [selectedOrg]);
 
   useEffect(() => {
     fetchUserData();
-  }, [fetchUserData]); // Changed dependencies to fetchUserData
+  }, [fetchUserData]);
 
   const handleAcceptUser = async (userId: string, userName: string) => {
     try {
-      const response = await fetch("/api/accept-user", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, orgId: selectedOrg?.id }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to accept user");
-      }
-
+      await acceptUser(userId, selectedOrg?.id as string); // ✅ Using server action
       toast.success(`${userName} accepted successfully!`);
       fetchUserData();
     } catch (error) {
@@ -94,16 +78,7 @@ const UsersTable = () => {
 
   const handleRejectUser = async (userId: string, userName: string) => {
     try {
-      const response = await fetch("/api/reject-user", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, orgId: selectedOrg?.id }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to reject user");
-      }
-
+      await rejectUser(userId, selectedOrg?.id as string); // ✅ Using server action
       toast.success(`${userName} rejected successfully!`);
       fetchUserData();
     } catch (error) {
@@ -114,19 +89,7 @@ const UsersTable = () => {
 
   const handleRemoveUser = async (userId: string, userName: string) => {
     try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from("organization_members")
-        .delete()
-        .match({
-          user_id: userId,
-          organization_id: selectedOrg?.id,
-        });
-
-      if (error) {
-        throw new Error("Failed to remove user");
-      }
-
+      await removeUser(userId, selectedOrg?.id as string); // ✅ Using server action
       toast.success(`${userName} removed successfully!`);
       fetchUserData();
     } catch (error) {
