@@ -16,6 +16,9 @@ import { useOrganization } from "@/context/organization-context";
 import { useUser } from "@/context/user-context";
 import { toast } from "sonner";
 
+// ✅ Import Server Action
+import { createProject } from "@/app/dashboard/projects/actions";
+
 interface ProjectCreateDialogProps {
   isDialogOpen: boolean;
   setIsDialogOpen: (open: boolean) => void;
@@ -32,36 +35,26 @@ const ProjectCreateDialog: React.FC<ProjectCreateDialogProps> = ({
   const { selectedOrg } = useOrganization();
   const { user } = useUser();
 
+  // ✅ Use Server Action instead of API
   const handleCreateProject = async () => {
     if (!selectedOrg) return;
     if (!user || !user.id) return;
     try {
-      const response = await fetch("/api/projects", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: newProjectName,
-          description: newProjectDescription,
-          organization_id: selectedOrg.id,
-          created_by: user.id,
-        }),
+      await createProject({
+        name: newProjectName,
+        description: newProjectDescription,
+        organization_id: selectedOrg.id,
+        created_by: user.id,
       });
 
-      if (response.ok) {
-        fetchProjectsData();
-        setIsDialogOpen(false);
-        setNewProjectName("");
-        setNewProjectDescription("");
-        toast.success("Project created successfully!");
-      } else {
-        console.error("Failed to create project:", response.statusText);
-        toast.error("Failed to create project.");
-      }
+      fetchProjectsData(); // Refresh project list
+      setIsDialogOpen(false);
+      setNewProjectName("");
+      setNewProjectDescription("");
+      toast.success("Project created successfully!");
     } catch (error) {
       console.error("Error creating project:", error);
-      toast.error("An error occurred while creating project.");
+      toast.error("Failed to create project.");
     }
   };
 
@@ -79,9 +72,7 @@ const ProjectCreateDialog: React.FC<ProjectCreateDialogProps> = ({
             <Input
               id="name"
               value={newProjectName}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setNewProjectName(e.target.value)
-              }
+              onChange={(e) => setNewProjectName(e.target.value)}
               className="col-span-3"
             />
           </div>
@@ -92,9 +83,7 @@ const ProjectCreateDialog: React.FC<ProjectCreateDialogProps> = ({
             <Textarea
               id="description"
               value={newProjectDescription}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                setNewProjectDescription(e.target.value)
-              }
+              onChange={(e) => setNewProjectDescription(e.target.value)}
               className="col-span-3"
             />
           </div>

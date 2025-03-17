@@ -142,10 +142,10 @@ const ProjectTable = () => {
       cell: ({ row }) => (
         <span
           className={`px-2 py-1 rounded-md text-xs ${row.original.status === "active"
-              ? "bg-green-500 text-white"
-              : row.original.status === "archived"
-                ? "bg-gray-300"
-                : "bg-yellow-400"
+            ? "bg-green-500 text-white"
+            : row.original.status === "archived"
+              ? "bg-gray-300"
+              : "bg-yellow-400"
             }`}
         >
           {row.original.status}
@@ -190,7 +190,7 @@ const ProjectTable = () => {
             );
             toast.error(
               `An error occurred while ${isArchived ? "activating" : "archiving"
-              } project.`// components/projects/project-table.tsx (continued)
+              } project.`
 
             );
           }
@@ -251,7 +251,7 @@ const ProjectTable = () => {
         value: filterValue,
       },
     ]);
-  }, [filterValue]);
+  }, [filterValue, table]); 
 
   return (
     <div className="w-full">
