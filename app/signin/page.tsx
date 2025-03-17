@@ -18,9 +18,21 @@ const Signin = () => {
 
   return (
     <main className="grid min-h-screen lg:grid-cols-2">
-      {/* Left Side - Login Section */}
-      <div className="flex flex-col justify-center px-6 md:px-10">
-        <div className="absolute top-6 left-6 flex items-center gap-2">
+      {/* Left Side - Gradient Section (Flipped) */}
+      {mounted && (
+        <div
+          className={`hidden lg:flex min-h-screen transition-all duration-300 ${isDark
+            ? "bg-gradient-to-l from-[#1e3a8a] to-[#0f172a]" // 🔥 Flipped direction
+            : "bg-gradient-to-l from-[#3b82f6] to-[#1e3a8a]" // 🔥 Flipped direction
+            }`}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Right Side - Login Section (Swapped) */}
+      <div className="flex flex-col justify-center px-6 md:px-10 relative">
+        {/* 🔥 Moved "CloudCast" to the Right */}
+        <div className="absolute top-6 right-6 flex items-center gap-2">
           <Link href="/" aria-label="Go to homepage">
             <div className="flex h-6 w-6 items-center justify-center rounded-md border">
               <AudioLines className="size-4" />
@@ -50,16 +62,6 @@ const Signin = () => {
           </p>
         </div>
       </div>
-
-      {mounted && (
-        <div
-          className={`hidden lg:flex min-h-screen transition-all duration-300 ${isDark
-              ? "bg-gradient-to-r from-[#1e3a8a] to-[#0f172a]"
-              : "bg-gradient-to-r from-[#3b82f6] to-[#1e3a8a]"
-            }`}
-          aria-hidden="true"
-        />
-      )}
     </main>
   );
 };

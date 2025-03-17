@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { fetchUsers, acceptUser, rejectUser, removeUser } from "./actions"; // ✅ Using server actions
+import { fetchUsers, acceptUser, rejectUser, removeUser } from "./actions"; 
 import {
   ColumnDef,
   SortingState,
@@ -67,8 +67,7 @@ const UsersTable = () => {
 
   const handleAcceptUser = async (userId: string, userName: string) => {
     try {
-      await acceptUser(userId, selectedOrg?.id as string); // ✅ Using server action
-      toast.success(`${userName} accepted successfully!`);
+      await acceptUser(userId, selectedOrg?.id as string);       toast.success(`${userName} accepted successfully!`);
       fetchUserData();
     } catch (error) {
       console.error("Error accepting user:", error);
@@ -78,8 +77,7 @@ const UsersTable = () => {
 
   const handleRejectUser = async (userId: string, userName: string) => {
     try {
-      await rejectUser(userId, selectedOrg?.id as string); // ✅ Using server action
-      toast.success(`${userName} rejected successfully!`);
+      await rejectUser(userId, selectedOrg?.id as string);       toast.success(`${userName} rejected successfully!`);
       fetchUserData();
     } catch (error) {
       console.error("Error rejecting user:", error);
@@ -89,8 +87,7 @@ const UsersTable = () => {
 
   const handleRemoveUser = async (userId: string, userName: string) => {
     try {
-      await removeUser(userId, selectedOrg?.id as string); // ✅ Using server action
-      toast.success(`${userName} removed successfully!`);
+      await removeUser(userId, selectedOrg?.id as string);       toast.success(`${userName} removed successfully!`);
       fetchUserData();
     } catch (error) {
       console.error("Error removing user:", error);
@@ -165,8 +162,8 @@ const UsersTable = () => {
       cell: ({ row }) => (
         <span
           className={`px-2 py-1 rounded-md text-xs ${row.original.status === "active"
-              ? "bg-green-500 text-white"
-              : "bg-gray-300"
+            ? "bg-green-500 text-white"
+            : "bg-gray-300"
             }`}
         >
           {row.original.status}
