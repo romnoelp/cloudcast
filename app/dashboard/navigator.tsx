@@ -10,7 +10,11 @@ import {
 import { NavLink, Role, roleToLinks } from "@/types/navigation";
 import Link from "next/link";
 
-const Navigator = () => {
+type NavigatorProps = {
+    className?: string;
+};
+
+const Navigator = ({ className = "" }: NavigatorProps) => {
     const { role, loading } = useUser();
     const pathname = usePathname();
 
@@ -19,22 +23,17 @@ const Navigator = () => {
     const links: NavLink[] = role ? roleToLinks[role as Role] || [] : [];
 
     return (
-        <NavigationMenu>
+        <NavigationMenu className={className}>
             <NavigationMenuList>
-                {links.map(({ href, name }: NavLink) => {
+                {links.map(({ href, name }) => {
                     const isActive = pathname === href;
-                    const linkClassNames = `
-                        text-sm
-                        font-medium
-                        transition-colors
-                        mx-4
-                        hover:text-primary
-                        ${isActive ? "text-primary" : "text-muted-foreground"}
-                    `;
-
                     return (
                         <NavigationMenuItem key={href}>
-                            <Link href={href} className={linkClassNames}>
+                            <Link
+                                href={href}
+                                className={`text-sm font-medium transition-colors mx-4 hover:text-primary ${isActive ? "text-primary" : "text-muted-foreground"
+                                    }`}
+                            >
                                 {name}
                             </Link>
                         </NavigationMenuItem>
