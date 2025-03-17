@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import TasksTableMock from "../task/task-table";
+import TasksTableMock from "../../../components/task/task-table";
 
 interface ProjectDetailsProps {
   projectId: string;
@@ -67,7 +67,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ projectId, onClose }) =
             </TabsList>
             <div className="h-full">
               <TabsContent value="tasks">
-                <TasksTableMock/>
+                <TasksTableMock />
               </TabsContent>
               <TabsContent value="inbox">
                 <p>Inbox for {project.name} will be displayed here.</p>

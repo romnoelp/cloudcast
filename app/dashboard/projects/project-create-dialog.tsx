@@ -16,14 +16,8 @@ import { useOrganization } from "@/context/organization-context";
 import { useUser } from "@/context/user-context";
 import { toast } from "sonner";
 
-// ✅ Import Server Action
 import { createProject } from "@/app/dashboard/projects/actions";
-
-interface ProjectCreateDialogProps {
-  isDialogOpen: boolean;
-  setIsDialogOpen: (open: boolean) => void;
-  fetchProjectsData: () => void;
-}
+import { ProjectCreateDialogProps } from "./project-type";
 
 const ProjectCreateDialog: React.FC<ProjectCreateDialogProps> = ({
   isDialogOpen,
@@ -35,7 +29,6 @@ const ProjectCreateDialog: React.FC<ProjectCreateDialogProps> = ({
   const { selectedOrg } = useOrganization();
   const { user } = useUser();
 
-  // ✅ Use Server Action instead of API
   const handleCreateProject = async () => {
     if (!selectedOrg) return;
     if (!user || !user.id) return;
@@ -47,7 +40,7 @@ const ProjectCreateDialog: React.FC<ProjectCreateDialogProps> = ({
         created_by: user.id,
       });
 
-      fetchProjectsData(); // Refresh project list
+      fetchProjectsData();
       setIsDialogOpen(false);
       setNewProjectName("");
       setNewProjectDescription("");

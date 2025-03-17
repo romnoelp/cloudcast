@@ -40,7 +40,7 @@ import ProjectCreateDialog from "./project-create-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useCallback } from "react";
 import { toast } from "sonner";
-import ProjectDetails from "@/components/projects/project-details";
+import ProjectDetails from "@/app/dashboard/projects/project-details";
 
 const ProjectTable = () => {
   const { selectedOrg } = useOrganization();
@@ -251,7 +251,7 @@ const ProjectTable = () => {
         value: filterValue,
       },
     ]);
-  }, [filterValue, table]); 
+  }, [filterValue, table]);
 
   return (
     <div className="w-full">
