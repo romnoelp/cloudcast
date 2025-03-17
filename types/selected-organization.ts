@@ -8,6 +8,7 @@ export type Organization = {
 export type OrganizationContextType = {
     selectedOrg: Organization | null;
     setSelectedOrg: (org: Organization | null) => void;
-    organizations: Organization[]; 
+    organizations: Organization[];
+    setOrganizations: (orgs: Organization[]) => void; 
     loading: boolean;
 };

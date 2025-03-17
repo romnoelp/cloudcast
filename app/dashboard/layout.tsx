@@ -1,9 +1,9 @@
 import { ReactNode } from "react";
-import { Search } from "./search";
-import { Navigator } from "./navigator";
-import TeamSwitcher from "./team-switcher";
-import User from "./user";
-import ThemeToggle from "./theme-toggle";
+import { Search } from "./(layout-components)/search";
+import { Navigator } from "./(layout-components)/navigator";
+import TeamSwitcher from "./(layout-components)/team-switcher";
+import User from "./(layout-components)/user";
+import ThemeToggle from "./(layout-components)/theme-toggle";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
@@ -11,7 +11,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <header className="border-b">
         <div className="flex h-16 items-center px-4">
           <TeamSwitcher />
-          <Navigator className="ml-2" /> {/* ✅ className now works */}
+          <Navigator className="ml-2" /> 
           <div className="ml-auto flex items-center space-x-4">
             <Search />
             <ThemeToggle />
@@ -19,8 +19,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-
-      {/* Main Content */}
       <main className="flex-1 p-8 pt-6">{children}</main>
     </div>
   );

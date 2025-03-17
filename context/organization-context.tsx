@@ -10,8 +10,9 @@ import { useUser } from "@/context/user-context";
 
 const OrganizationContext = createContext<OrganizationContextType>({
   selectedOrg: null,
-  setSelectedOrg: () => {},
+  setSelectedOrg: () => { },
   organizations: [],
+  setOrganizations: () => { }, 
   loading: false,
 });
 
@@ -93,6 +94,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
     selectedOrg,
     setSelectedOrg,
     organizations,
+    setOrganizations, 
     loading,
   };
 

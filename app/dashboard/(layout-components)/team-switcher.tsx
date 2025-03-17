@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Check, ChevronsUpDown, PlusCircle} from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useState, useRef } from "react"; // Import useRef
+import { Check, ChevronsUpDown, PlusCircle, Copy } from "lucide-react"; // Import Copy icon
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -42,15 +41,15 @@ const TeamSwitcher: React.FC = () => {
   const supabase = createClient();
   const [open, setOpen] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
-  const [isJoining, setIsJoining] = useState(false); // Track whether joining or creating
+  const [isJoining, setIsJoining] = useState(false); 
   const { role, user } = useUser();
-  const { selectedOrg, setSelectedOrg, organizations } = useOrganization();
+  const { selectedOrg, setSelectedOrg, organizations, setOrganizations } = useOrganization();
   const [orgName, setOrgName] = useState("");
   const [description, setDescription] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [generatedJoinCode] = useState(generateJoinCode());
   const [loading, setLoading] = useState(false);
-
+  const generatedJoinCodeRef = useRef<HTMLInputElement>(null); 
 
   // ✅ Create Organization Logic
   const handleCreateOrganization = async () => {
@@ -95,8 +94,24 @@ const TeamSwitcher: React.FC = () => {
         throw memberError;
       }
 
-      toast.success("Organization created and admin added!");
+      // ✅ Fetch updated organization list
+      const { data: updatedOrganizations, error: fetchError } = await supabase
+        .from("organization_members")
+        .select("organizations!inner(id, name, description, created_by)")
+        .eq("user_id", user?.id);
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      const extractedOrganizations = updatedOrganizations.flatMap(
+        (entry) => entry.organizations
+      );
+
+      setOrganizations(extractedOrganizations);
       setSelectedOrg(orgData);
+
+      toast.success("Organization created successfully!");
       setShowDialog(false);
       setOrgName("");
       setDescription("");
@@ -108,8 +123,7 @@ const TeamSwitcher: React.FC = () => {
     setLoading(false);
   };
 
-  // ✅ Join Organization Logic
-  // ✅ Join Organization Logic with Duplicate Request Check
+
   const handleJoinOrganization = async () => {
     if (!joinCode.trim()) {
       toast.error("Join code is required.");
@@ -119,7 +133,6 @@ const TeamSwitcher: React.FC = () => {
     setLoading(true);
 
     try {
-      // ✅ Find organization by join code
       const { data: org, error: orgError } = await supabase
         .from("organizations")
         .select("id, name, description, created_by")
@@ -132,7 +145,6 @@ const TeamSwitcher: React.FC = () => {
         return;
       }
 
-      // ✅ Check if user already has a pending request
       const { data: existingRequest, error: requestError } = await supabase
         .from("organization_members")
         .select("status")
@@ -151,11 +163,9 @@ const TeamSwitcher: React.FC = () => {
       }
 
       if (requestError && requestError.code !== "PGRST116") {
-        // Ignore "PGRST116" because it means no record was found, which is expected if user hasn't requested yet
         throw requestError;
       }
 
-      // ✅ Add user to organization_members as "pending"
       const { error: memberError } = await supabase
         .from("organization_members")
         .insert([
@@ -182,6 +192,17 @@ const TeamSwitcher: React.FC = () => {
     setLoading(false);
   };
 
+  const handleCopyJoinCode = async () => {
+    try {
+      await navigator.clipboard.writeText(generatedJoinCode);
+      toast.success("Join code copied to clipboard!");
+    } catch {
+      toast.error("Failed to copy join code.");
+    }
+  };
+
+
+
   return (
     <Dialog open={showDialog} onOpenChange={setShowDialog}>
       <Popover open={open} onOpenChange={setOpen}>
@@ -189,21 +210,26 @@ const TeamSwitcher: React.FC = () => {
           <Button
             variant="outline"
             role="combobox"
-            className={cn("w-[200px] justify-between")}
+            className="w-[200px] flex items-center justify-between px-3 py-2"
           >
-            <Avatar className="mr-2 h-5 w-5">
-              <AvatarImage
-                src={`https://avatar.vercel.sh/${
-                  selectedOrg?.id || "organization"
-                }.png`}
-                alt="Org"
-              />
-              <AvatarFallback>O</AvatarFallback>
-            </Avatar>
-            {selectedOrg ? selectedOrg.name : "Select Organization"}
-            <ChevronsUpDown className="ml-auto opacity-50" />
+            <div className="flex items-center space-x-2">
+              <Avatar className="h-6 w-6">
+                <AvatarImage
+                  src={`https://avatar.vercel.sh/${selectedOrg?.id || "organization"}.png`}
+                  alt="Organization Avatar"
+                />
+                <AvatarFallback className="bg-gray-200 text-gray-600">
+                  {selectedOrg?.name ? selectedOrg.name.charAt(0).toUpperCase() : "O"}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-sm font-medium">
+                {selectedOrg ? selectedOrg.name : "Select Organization"}
+              </span>
+            </div>
+            <ChevronsUpDown className="ml-auto opacity-50 h-4 w-4" />
           </Button>
         </PopoverTrigger>
+
         <PopoverContent className="w-[200px] p-0">
           <Command>
             <CommandInput placeholder="Search organizations..." />
@@ -300,6 +326,19 @@ const TeamSwitcher: React.FC = () => {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="generated-join-code">Generated Join Code</Label>
+                <Input
+                  id="generated-join-code"
+                  value={generatedJoinCode}
+                  readOnly
+                  ref={generatedJoinCodeRef}
+                  className="flex-1"
+                />
+                <Button variant="outline" size="icon" onClick={handleCopyJoinCode}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
             </>
           )}
         </div>
