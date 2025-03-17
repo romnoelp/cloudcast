@@ -38,7 +38,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
       try {
         const { data, error: supabaseError } = await supabase
           .from("organization_members")
-          .select("organizations!inner(id, name, description, created_by)")
+          .select("organizations!inner(id, name, description, created_by, join_code)") 
           .eq("user_id", user.id);
 
         if (supabaseError) {

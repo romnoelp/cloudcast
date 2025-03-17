@@ -3,7 +3,9 @@ export type Organization = {
     name: string;
     description: string;
     created_by: string;
+    join_code: string; 
 };
+
 
 export type OrganizationContextType = {
     selectedOrg: Organization | null;

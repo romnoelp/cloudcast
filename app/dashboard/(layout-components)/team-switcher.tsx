@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react"; // Import useRef
-import { Check, ChevronsUpDown, PlusCircle, Copy } from "lucide-react"; // Import Copy icon
+import { useState, useRef } from "react"; 
+import { Check, ChevronsUpDown, PlusCircle, Copy } from "lucide-react"; 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -51,7 +51,6 @@ const TeamSwitcher: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const generatedJoinCodeRef = useRef<HTMLInputElement>(null); 
 
-  // ✅ Create Organization Logic
   const handleCreateOrganization = async () => {
     if (!orgName.trim()) {
       toast.error("Organization name is required.");
@@ -68,7 +67,7 @@ const TeamSwitcher: React.FC = () => {
             name: orgName,
             description,
             created_by: user?.id,
-            join_code: generatedJoinCode,
+            join_code: generatedJoinCode, 
           },
         ])
         .select()
@@ -78,7 +77,6 @@ const TeamSwitcher: React.FC = () => {
         throw orgError;
       }
 
-      // ✅ Step 2: Insert admin into `organization_members`
       const { error: memberError } = await supabase
         .from("organization_members")
         .insert([
@@ -94,10 +92,9 @@ const TeamSwitcher: React.FC = () => {
         throw memberError;
       }
 
-      // ✅ Fetch updated organization list
       const { data: updatedOrganizations, error: fetchError } = await supabase
         .from("organization_members")
-        .select("organizations!inner(id, name, description, created_by)")
+        .select("organizations!inner(id, name, description, created_by, join_code)") 
         .eq("user_id", user?.id);
 
       if (fetchError) {
@@ -109,7 +106,7 @@ const TeamSwitcher: React.FC = () => {
       );
 
       setOrganizations(extractedOrganizations);
-      setSelectedOrg(orgData);
+      setSelectedOrg(orgData); 
 
       toast.success("Organization created successfully!");
       setShowDialog(false);
@@ -122,6 +119,7 @@ const TeamSwitcher: React.FC = () => {
 
     setLoading(false);
   };
+
 
 
   const handleJoinOrganization = async () => {
@@ -286,7 +284,6 @@ const TeamSwitcher: React.FC = () => {
         </PopoverContent>
       </Popover>
 
-      {/* Dialog for Creating or Joining Organization */}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
