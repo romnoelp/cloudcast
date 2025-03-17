@@ -83,7 +83,7 @@ export const createProject = async ({
 
 
 export const updateProjectStatus = async (projectId: string, newStatus: string, orgId: string) => {
-    const supabase = await checkAdminAccess(orgId); 
+    const supabase = await checkAdminAccess(orgId);
 
     const { error } = await supabase
         .from("projects")
@@ -94,7 +94,7 @@ export const updateProjectStatus = async (projectId: string, newStatus: string, 
 };
 
 export const deleteProject = async (projectId: string, orgId: string) => {
-    const supabase = await checkAdminAccess(orgId); 
+    const supabase = await checkAdminAccess(orgId);
 
     const { error } = await supabase
         .from("projects")

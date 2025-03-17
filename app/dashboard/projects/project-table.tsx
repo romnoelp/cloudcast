@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useOrganization } from "@/context/organization-context";
 import { Project } from "@/types/project";
 import {
@@ -34,13 +34,12 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-import { useUser } from "@/context/user-context";
 import ProjectTableRow from "./project-table-row";
 import ProjectCreateDialog from "./project-create-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useCallback } from "react";
 import { toast } from "sonner";
 import ProjectDetails from "@/app/dashboard/projects/project-details";
+import { fetchProjects, updateProjectStatus, deleteProject } from "@/app/dashboard/projects/actions"; // Import actions
 
 const ProjectTable = () => {
   const { selectedOrg } = useOrganization();
@@ -53,23 +52,16 @@ const ProjectTable = () => {
   const [filterValue, setFilterValue] = useState<string>("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [openedProjectId, setOpenedProjectId] = useState<string | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { user } = useUser();
-
 
   const fetchProjectsData = useCallback(async () => {
     if (!selectedOrg) return;
     setLoading(true);
     try {
-      const response = await fetch(`/api/projects?organizationId=${selectedOrg.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setProjects(data);
-      } else {
-        console.error("Error fetching projects:", response.statusText);
-      }
+      const fetchedProjects = await fetchProjects(selectedOrg.id);
+      setProjects(fetchedProjects);
     } catch (error) {
       console.error("Fetch error:", error);
+      toast.error("Failed to fetch projects.");
     } finally {
       setLoading(false);
     }
@@ -83,22 +75,15 @@ const ProjectTable = () => {
     setOpenedProjectId(projectId);
   };
 
-  const handleDeleteProject = async (projectId: string) => {
+  const handleDeleteProjectAction = async (projectId: string) => {
+    if (!selectedOrg) return;
     try {
-      const response = await fetch(`/api/projects/${projectId}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        fetchProjectsData();
-        toast.success("Project deleted successfully!");
-      } else {
-        console.error("Failed to delete project:", response.statusText);
-        toast.error("Failed to delete project.");
-      }
+      await deleteProject(projectId, selectedOrg.id);
+      fetchProjectsData();
+      toast.success("Project deleted successfully!");
     } catch (error) {
       console.error("Error deleting project:", error);
-      toast.error("An error occurred while deleting project.");
+      toast.error("Failed to delete project.");
     }
   };
 
@@ -128,9 +113,7 @@ const ProjectTable = () => {
     {
       accessorKey: "name",
       header: "Name",
-      cell: ({ row }) => (
-        <span className="font-medium">{row.original.name}</span>
-      ),
+      cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
     },
     {
       accessorKey: "description",
@@ -142,10 +125,10 @@ const ProjectTable = () => {
       cell: ({ row }) => (
         <span
           className={`px-2 py-1 rounded-md text-xs ${row.original.status === "active"
-            ? "bg-green-500 text-white"
-            : row.original.status === "archived"
-              ? "bg-gray-300"
-              : "bg-yellow-400"
+              ? "bg-green-500 text-white"
+              : row.original.status === "archived"
+                ? "bg-gray-300"
+                : "bg-yellow-400"
             }`}
         >
           {row.original.status}
@@ -158,40 +141,23 @@ const ProjectTable = () => {
       cell: ({ row }) => {
         const isArchived = row.original.status === "archived";
         const actionText = isArchived ? "Activate" : "Archive";
+
         const handleStatusChange = async () => {
+          if (!selectedOrg) return;
           try {
             const newStatus = isArchived ? "active" : "archived";
-            const response = await fetch(`/api/projects/${row.original.id}`, {
-              method: "PATCH",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ status: newStatus }),
-            });
-
-            if (response.ok) {
-              fetchProjectsData();
-              toast.success(
-                `Project ${isArchived ? "activated" : "archived"} successfully!`
-              );
-            } else {
-              console.error(
-                `Failed to ${isArchived ? "activate" : "archive"} project:`,
-                response.statusText
-              );
-              toast.error(
-                `Failed to ${isArchived ? "activate" : "archive"} project.`
-              );
-            }
+            await updateProjectStatus(row.original.id, newStatus, selectedOrg.id);
+            fetchProjectsData();
+            toast.success(
+              `Project ${isArchived ? "activated" : "archived"} successfully!`
+            );
           } catch (error) {
             console.error(
               `Error ${isArchived ? "activating" : "archiving"} project:`,
               error
             );
             toast.error(
-              `An error occurred while ${isArchived ? "activating" : "archiving"
-              } project.`
-
+              `Failed to ${isArchived ? "activate" : "archive"} project.`
             );
           }
         };
@@ -205,17 +171,13 @@ const ProjectTable = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() => handleOpenProject(row.original.id)}
-              >
+              <DropdownMenuItem onClick={() => handleOpenProject(row.original.id)}>
                 Open
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleStatusChange}>
                 {actionText}
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => handleDeleteProject(row.original.id)}
-              >
+              <DropdownMenuItem onClick={() => handleDeleteProjectAction(row.original.id)}>
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -245,21 +207,13 @@ const ProjectTable = () => {
   });
 
   useEffect(() => {
-    table.setColumnFilters([
-      {
-        id: "name",
-        value: filterValue,
-      },
-    ]);
+    table.setColumnFilters([{ id: "name", value: filterValue }]);
   }, [filterValue, table]);
 
   return (
     <div className="w-full">
       {openedProjectId ? (
-        <ProjectDetails
-          projectId={openedProjectId}
-          onClose={() => setOpenedProjectId(null)}
-        />
+        <ProjectDetails projectId={openedProjectId} onClose={() => setOpenedProjectId(null)} />
       ) : (
         <>
           <div className="flex items-center py-4">
@@ -287,9 +241,7 @@ const ProjectTable = () => {
                       key={column.id}
                       className="capitalize"
                       checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
+                      onCheckedChange={(value) => column.toggleVisibility(!!value)}
                     >
                       {column.id}
                     </DropdownMenuCheckboxItem>
@@ -311,10 +263,7 @@ const ProjectTable = () => {
                       <TableHead key={header.id}>
                         {header.isPlaceholder
                           ? null
-                          : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          : flexRender(header.column.columnDef.header, header.getContext())}
                       </TableHead>
                     ))}
                   </TableRow>
@@ -323,25 +272,17 @@ const ProjectTable = () => {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className="h-24 text-center"
-                    >
+                    <TableCell colSpan={columns.length} className="h-24 text-center">
                       Loading...
                     </TableCell>
                   </TableRow>
                 ) : table.getRowModel().rows.length ? (
-                  table
-                    .getRowModel()
-                    .rows.map((row) => (
-                      <ProjectTableRow key={row.id} row={row} />
-                    ))
+                  table.getRowModel().rows.map((row) => (
+                    <ProjectTableRow key={row.id} row={row} />
+                  ))
                 ) : (
                   <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className="h-24 text-center"
-                    >
+                    <TableCell colSpan={columns.length} className="h-24 text-center">
                       No created projects.
                     </TableCell>
                   </TableRow>
