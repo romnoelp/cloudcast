@@ -5,7 +5,7 @@ import { Project } from "@/types/project";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import TasksTableMock from "../../../components/task/task-table";
+import TasksTableMock from "../../../../components/task/task-table";
 import { fetchProjectDetails } from "@/app/dashboard/projects/actions";
 
 interface ProjectDetailsProps {

@@ -13,20 +13,30 @@ import {
     getSortedRowModel,
     useReactTable,
 } from "@tanstack/react-table";
-import { ChevronDown, MoreHorizontal } from "lucide-react";
+import {
+    MoreHorizontal,
+    CheckCircle,
+    Clock,
+    Circle,
+    Ban,
+    HelpCircle,
+    ArrowUp,
+    ArrowRight,
+    ArrowDown,
+    ChevronDown,
+    PlusCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
     DropdownMenu,
-    DropdownMenuCheckboxItem,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-    DropdownMenuSub,
-    DropdownMenuSubContent,
-    DropdownMenuSubTrigger,
+    DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
@@ -37,6 +47,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
 interface Task {
     task: string;
@@ -46,24 +57,37 @@ interface Task {
     labels: string[];
 }
 
-const mockTasks: Task[] = [
-    {
-        task: "TASK-1234",
-        title: "Implement user authentication",
-        status: "Todo",
-        priority: "High",
-        labels: ["Feature"],
-    },
-];
+// ✅ Mock Data (100 tasks)
+const mockTasks: Task[] = Array.from({ length: 100 }, (_, i) => ({
+    task: `TASK-${8000 + i}`,
+    title: `Sample Task ${i + 1}`,
+    status: i % 2 === 0 ? "In Progress" : "Todo",
+    priority: i % 3 === 0 ? "High" : i % 3 === 1 ? "Medium" : "Low",
+    labels: i % 2 === 0 ? ["Feature"] : ["Bug"],
+}));
+
+// ✅ Status Icons
+const statusIcons: Record<string, React.ReactNode> = {
+    "In Progress": <Clock className="h-4 w-4" />,
+    Done: <CheckCircle className="h-4 w-4" />,
+    Todo: <Circle className="h-4 w-4" />,
+    Backlog: <HelpCircle className="h-4 w-4" />,
+    Canceled: <Ban className="h-4 w-4" />,
+};
+
+// ✅ Priority Icons
+const priorityIcons: Record<string, React.ReactNode> = {
+    High: <ArrowUp className="h-4 w-4" />,
+    Medium: <ArrowRight className="h-4 w-4" />,
+    Low: <ArrowDown className="h-4 w-4" />,
+};
 
 const TasksTableMock = () => {
     const [sorting, setSorting] = useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
     const [rowSelection, setRowSelection] = useState({});
-    const [filterValue, setFilterValue] = useState<string>("");
 
-    // ✅ Ensure `columns` is included in `useMemo` dependencies
     const columns: ColumnDef<Task>[] = useMemo(
         () => [
             {
@@ -90,16 +114,41 @@ const TasksTableMock = () => {
                 header: "Task",
             },
             {
+                accessorKey: "labels",
+                header: "Labels",
+                cell: ({ row }) => (
+                    <div className="flex gap-1">
+                        {row.original.labels.map((label) => (
+                            <Badge key={label} variant="outline" className="px-2 py-1 text-xs">
+                                {label}
+                            </Badge>
+                        ))}
+                    </div>
+                ),
+            },
+            {
                 accessorKey: "title",
                 header: "Title",
             },
             {
                 accessorKey: "status",
                 header: "Status",
+                cell: ({ row }) => (
+                    <div className="flex items-center gap-2">
+                        {statusIcons[row.original.status]}
+                        {row.original.status}
+                    </div>
+                ),
             },
             {
                 accessorKey: "priority",
                 header: "Priority",
+                cell: ({ row }) => (
+                    <div className="flex items-center gap-2">
+                        {priorityIcons[row.original.priority]}
+                        {row.original.priority}
+                    </div>
+                ),
             },
             {
                 id: "actions",
@@ -114,14 +163,6 @@ const TasksTableMock = () => {
                         <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuItem>Edit</DropdownMenuItem>
-                            <DropdownMenuSub>
-                                <DropdownMenuSubTrigger>Labels</DropdownMenuSubTrigger>
-                                <DropdownMenuSubContent>
-                                    <DropdownMenuItem>Bug</DropdownMenuItem>
-                                    <DropdownMenuItem>Feature</DropdownMenuItem>
-                                    <DropdownMenuItem>Documentation</DropdownMenuItem>
-                                </DropdownMenuSubContent>
-                            </DropdownMenuSub>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem>Delete</DropdownMenuItem>
                         </DropdownMenuContent>
@@ -129,10 +170,9 @@ const TasksTableMock = () => {
                 ),
             },
         ],
-        [] // ✅ No external dependencies needed
+        []
     );
 
-    // ✅ `useReactTable` should be called directly in the component, not inside `useMemo`
     const table = useReactTable({
         data: mockTasks,
         columns,
@@ -144,21 +184,19 @@ const TasksTableMock = () => {
         getFilteredRowModel: getFilteredRowModel(),
         onColumnVisibilityChange: setColumnVisibility,
         onRowSelectionChange: setRowSelection,
-        state: {
-            sorting,
-            columnFilters,
-            columnVisibility,
-            rowSelection,
-        },
+        state: { sorting, columnFilters, columnVisibility, rowSelection },
     });
 
     return (
-        <div className="w-full">
+        <div className="w-full h-full flex flex-col">
+            {/* ✅ Search & Column Toggle */}
             <div className="flex items-center py-4">
                 <Input
                     placeholder="Filter tasks..."
-                    value={filterValue}
-                    onChange={(event) => setFilterValue(event.target.value)}
+                    onChange={(event) => {
+                        const value = event.target.value.toLowerCase();
+                        table.setGlobalFilter(value); // 🔥 Filters across all columns
+                    }}
                     className="max-w-sm"
                 />
                 <DropdownMenu>
@@ -167,7 +205,7 @@ const TasksTableMock = () => {
                             Columns <ChevronDown />
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" avoidCollisions={false}>
+                    <DropdownMenuContent align="end">
                         {table.getAllColumns().map((column) =>
                             column.getCanHide() ? (
                                 <DropdownMenuCheckboxItem
@@ -183,52 +221,42 @@ const TasksTableMock = () => {
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
-            <div className="rounded-md border">
-                <Table>
-                    <TableHeader>
-                        {table.getHeaderGroups().map((headerGroup) => (
-                            <TableRow key={headerGroup.id}>
-                                {headerGroup.headers.map((header) => (
-                                    <TableHead key={header.id}>
-                                        {header.isPlaceholder
-                                            ? null
-                                            : flexRender(header.column.columnDef.header, header.getContext())}
-                                    </TableHead>
-                                ))}
-                            </TableRow>
-                        ))}
-                    </TableHeader>
-                    <TableBody>
-                        {table.getRowModel().rows.length ? (
-                            table.getRowModel().rows.map((row) => (
-                                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
-                                    {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id}>
-                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                        </TableCell>
+
+            {/* ✅ Scrollable Table */}
+            <div className="flex-1 overflow-hidden rounded-md border">
+                <ScrollArea className="h-[550px] overflow-auto">
+                    <Table className="w-full">
+                        <TableHeader>
+                            {table.getHeaderGroups().map((headerGroup) => (
+                                <TableRow key={headerGroup.id}>
+                                    {headerGroup.headers.map((header) => (
+                                        <TableHead key={header.id}>{flexRender(header.column.columnDef.header, header.getContext())}</TableHead>
                                     ))}
                                 </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={columns.length} className="h-24 text-center">
-                                    No tasks found.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
+                            ))}
+                        </TableHeader>
+                        <TableBody>
+                            {table.getRowModel().rows.map((row) => (
+                                <TableRow key={row.id}>
+                                    {row.getVisibleCells().map((cell) => (
+                                        <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                                    ))}
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </ScrollArea>
             </div>
-            <div className="flex items-center justify-end space-x-2 py-4">
-                <div className="flex-1 text-sm text-muted-foreground">
-                    {table.getFilteredSelectedRowModel().rows.length} of {table.getFilteredRowModel().rows.length} row(s) selected.
+
+            {/* ✅ Pagination + Create Task */}
+            <div className="flex items-center justify-between py-4">
+                <Button variant="default" className="flex items-center">
+                    <PlusCircle className="h-4 w-4 mr-2" /> Create Task
+                </Button>
+                <div className="space-x-2">
+                    <Button onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>Previous</Button>
+                    <Button onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>Next</Button>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
-                    Previous
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
-                    Next
-                </Button>
             </div>
         </div>
     );

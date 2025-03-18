@@ -38,7 +38,7 @@ import ProjectTableRow from "./project-table-row";
 import ProjectCreateDialog from "./project-create-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import ProjectDetails from "@/app/dashboard/projects/project-details";
+import ProjectDetails from "@/app/dashboard/projects/(tasks)/project-details";
 import { fetchProjects, updateProjectStatus, deleteProject } from "@/app/dashboard/projects/actions"; // Import actions
 
 const ProjectTable = () => {
@@ -125,10 +125,10 @@ const ProjectTable = () => {
       cell: ({ row }) => (
         <span
           className={`px-2 py-1 rounded-md text-xs ${row.original.status === "active"
-              ? "bg-green-500 text-white"
-              : row.original.status === "archived"
-                ? "bg-gray-300"
-                : "bg-yellow-400"
+            ? "bg-green-500 text-white"
+            : row.original.status === "archived"
+              ? "bg-gray-300"
+              : "bg-yellow-400"
             }`}
         >
           {row.original.status}

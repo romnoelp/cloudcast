@@ -27,12 +27,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="hidden flex-col md:flex">
-      <header className="border-b">
+    <div className="flex flex-col h-full w-screen "> {/* ✅ Prevents full page scroll */}
+      <header className="border-b flex-shrink-0">
         <div className="flex h-16 items-center px-4">
           <TeamSwitcher />
           <Navigator className="ml-2" />
-
           <div className="ml-auto flex items-center space-x-4">
             {selectedOrg && (
               <div className="flex items-center space-x-2 text-sm text-gray-600">
@@ -50,7 +49,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="flex-1 p-8 pt-6">{children}</main>
+      {/* ✅ Prevents the whole page from scrolling */}
+      <main className="flex-1 p-8 pt-6 overflow-hidden">{children}</main>
     </div>
   );
 }
