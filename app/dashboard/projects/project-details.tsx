@@ -5,7 +5,7 @@ import { Project } from "@/types/project";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import TasksTableMock from "../../../components/task/task-table";
+import TasksTableMock from "@/app/dashboard//projects/(tasks)/task-table";
 import { fetchProjectDetails } from "@/app/dashboard/projects/actions";
 
 interface ProjectDetailsProps {
@@ -13,7 +13,10 @@ interface ProjectDetailsProps {
   onClose: () => void;
 }
 
-const ProjectDetails: React.FC<ProjectDetailsProps> = ({ projectId, onClose }) => {
+const ProjectDetails: React.FC<ProjectDetailsProps> = ({
+  projectId,
+  onClose,
+}) => {
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -48,7 +51,10 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ projectId, onClose }) =
       </div>
 
       {/* ✅ Tabs fill available space */}
-      <Tabs defaultValue="tasks" className="w-full flex flex-col flex-grow overflow-hidden">
+      <Tabs
+        defaultValue="tasks"
+        className="w-full flex flex-col flex-grow overflow-hidden"
+      >
         <TabsList className="space-x-2">
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="inbox">Inbox</TabsTrigger>
@@ -59,8 +65,14 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ projectId, onClose }) =
         {/* ✅ This container will scroll instead of the entire page */}
         <div className="flex-grow overflow-auto">
           <TabsContent value="tasks" className="h-full">
-            <TasksTableMock />
+            <TasksTableMock
+              tasks={[]} // Replace with actual tasks fetched from the backend
+              projectId={projectId}
+              users={[]} // Replace with actual users in the project
+              fetchTasksData={() => {}} // Replace with actual function to fetch tasks
+            />
           </TabsContent>
+
           <TabsContent value="inbox" className="h-full">
             <p>Inbox for {project.name} will be displayed here.</p>
           </TabsContent>

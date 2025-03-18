@@ -48,23 +48,8 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-
-interface Task {
-    task: string;
-    title: string;
-    status: string;
-    priority: string;
-    labels: string[];
-}
-
-// ✅ Mock Data (100 tasks)
-const mockTasks: Task[] = Array.from({ length: 100 }, (_, i) => ({
-    task: `TASK-${8000 + i}`,
-    title: `Sample Task ${i + 1}`,
-    status: i % 2 === 0 ? "In Progress" : "Todo",
-    priority: i % 3 === 0 ? "High" : i % 3 === 1 ? "Medium" : "Low",
-    labels: i % 2 === 0 ? ["Feature"] : ["Bug"],
-}));
+import { Task, TaskCreateDialogProps } from "./task-type"; 
+import TaskCreateDialog from "./task-create-dialog"; // ✅ Import the TaskCreateDialog
 
 // ✅ Status Icons
 const statusIcons: Record<string, React.ReactNode> = {
@@ -82,11 +67,17 @@ const priorityIcons: Record<string, React.ReactNode> = {
     Low: <ArrowDown className="h-4 w-4" />,
 };
 
-const TasksTableMock = () => {
+const TasksTable = ({ tasks, projectId, users, fetchTasksData }: { 
+    tasks: Task[];
+    projectId: string;
+    users: TaskCreateDialogProps["users"];
+    fetchTasksData: () => void;
+}) => {
     const [sorting, setSorting] = useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
     const [rowSelection, setRowSelection] = useState({});
+    const [isDialogOpen, setIsDialogOpen] = useState(false); // ✅ State for Create Task Dialog
 
     const columns: ColumnDef<Task>[] = useMemo(
         () => [
@@ -110,25 +101,17 @@ const TasksTableMock = () => {
                 enableHiding: false,
             },
             {
-                accessorKey: "task",
-                header: "Task",
-            },
-            {
-                accessorKey: "labels",
-                header: "Labels",
-                cell: ({ row }) => (
-                    <div className="flex gap-1">
-                        {row.original.labels.map((label) => (
-                            <Badge key={label} variant="outline" className="px-2 py-1 text-xs">
-                                {label}
-                            </Badge>
-                        ))}
-                    </div>
-                ),
-            },
-            {
                 accessorKey: "title",
                 header: "Title",
+            },
+            {
+                accessorKey: "label",
+                header: "Label",
+                cell: ({ row }) => (
+                    <Badge variant="outline" className="px-2 py-1 text-xs">
+                        {row.original.label}
+                    </Badge>
+                ),
             },
             {
                 accessorKey: "status",
@@ -149,6 +132,11 @@ const TasksTableMock = () => {
                         {row.original.priority}
                     </div>
                 ),
+            },
+            {
+                accessorKey: "assignee_id",
+                header: "Assignee",
+                cell: ({ row }) => <span>{row.original.assignee_id}</span>,
             },
             {
                 id: "actions",
@@ -174,7 +162,7 @@ const TasksTableMock = () => {
     );
 
     const table = useReactTable({
-        data: mockTasks,
+        data: tasks, 
         columns,
         onSortingChange: setSorting,
         onColumnFiltersChange: setColumnFilters,
@@ -195,7 +183,7 @@ const TasksTableMock = () => {
                     placeholder="Filter tasks..."
                     onChange={(event) => {
                         const value = event.target.value.toLowerCase();
-                        table.setGlobalFilter(value); // 🔥 Filters across all columns
+                        table.setGlobalFilter(value);
                     }}
                     className="max-w-sm"
                 />
@@ -236,13 +224,21 @@ const TasksTableMock = () => {
                             ))}
                         </TableHeader>
                         <TableBody>
-                            {table.getRowModel().rows.map((row) => (
-                                <TableRow key={row.id}>
-                                    {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
-                                    ))}
+                            {table.getRowModel().rows.length > 0 ? (
+                                table.getRowModel().rows.map((row) => (
+                                    <TableRow key={row.id}>
+                                        {row.getVisibleCells().map((cell) => (
+                                            <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                                        ))}
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={columns.length} className="text-center py-4">
+                                        No tasks found.
+                                    </TableCell>
                                 </TableRow>
-                            ))}
+                            )}
                         </TableBody>
                     </Table>
                 </ScrollArea>
@@ -250,16 +246,25 @@ const TasksTableMock = () => {
 
             {/* ✅ Pagination + Create Task */}
             <div className="flex items-center justify-between py-4">
-                <Button variant="default" className="flex items-center">
+                <Button variant="default" className="flex items-center" onClick={() => setIsDialogOpen(true)}>
                     <PlusCircle className="h-4 w-4 mr-2" /> Create Task
                 </Button>
                 <div className="space-x-2">
-                    <Button onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>Previous</Button>
-                    <Button onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>Next</Button>
+                    <Button variant="outline" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>Previous</Button>
+                    <Button variant="outline" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>Next</Button>
                 </div>
             </div>
+
+            {/* ✅ Task Create Dialog */}
+            <TaskCreateDialog 
+                isDialogOpen={isDialogOpen} 
+                setIsDialogOpen={setIsDialogOpen} 
+                projectId={projectId}
+                users={users} 
+                fetchTasksData={fetchTasksData}
+            />
         </div>
     );
 };
 
-export default TasksTableMock;
+export default TasksTable;

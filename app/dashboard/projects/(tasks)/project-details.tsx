@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { Project } from "@/types/project";
+import { Task } from "./task-type";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import TasksTableMock from "../../../../components/task/task-table";
-import { fetchProjectDetails } from "@/app/dashboard/projects/actions";
+import TasksTable from "./task-table"; 
+import { fetchProjectDetails, fetchTasksForProject, fetchUsersInProject } from "@/app/dashboard/projects/actions";
 
 interface ProjectDetailsProps {
   projectId: string;
@@ -15,39 +16,52 @@ interface ProjectDetailsProps {
 
 const ProjectDetails: React.FC<ProjectDetailsProps> = ({ projectId, onClose }) => {
   const [project, setProject] = useState<Project | null>(null);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [users, setUsers] = useState<{ id: string; name: string; avatar: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const getProjectDetails = async () => {
+    const getProjectData = async () => {
       setLoading(true);
-      const data = await fetchProjectDetails(projectId);
-      if (!data) {
+
+      const projectData = await fetchProjectDetails(projectId);
+      if (!projectData) {
         toast.error("Project not found.");
+        setLoading(false);
+        return;
       }
-      setProject(data);
+
+      setProject(projectData);
+
+      const taskData = await fetchTasksForProject(projectId);
+      setTasks(taskData || []);
+
+      const userData = await fetchUsersInProject(projectId);
+      setUsers(userData || []);
+
       setLoading(false);
     };
 
-    getProjectDetails();
+    getProjectData();
   }, [projectId]);
 
-  if (loading) {
-    return <div>Loading project details...</div>;
-  }
+  const fetchTasksData = async () => {
+    const taskData = await fetchTasksForProject(projectId);
+    setTasks(taskData || []);
+  };
 
-  if (!project) {
-    return <div>Project not found.</div>;
-  }
+  if (loading) return <div>Loading project details...</div>;
+  if (!project) return <div>Project not found.</div>;
 
   return (
     <div className="flex flex-col w-full h-full p-4 overflow-hidden">
-      {/* ✅ The header stays fixed */}
+      {/* ✅ Header */}
       <div className="flex justify-between items-center pb-4">
         <h2 className="text-3xl font-bold tracking-tight">{project.name}</h2>
         <Button onClick={onClose}>Back to List</Button>
       </div>
 
-      {/* ✅ Tabs fill available space */}
+      {/* ✅ Tabs */}
       <Tabs defaultValue="tasks" className="w-full flex flex-col flex-grow overflow-hidden">
         <TabsList className="space-x-2">
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
@@ -56,10 +70,15 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ projectId, onClose }) =
           <TabsTrigger value="trash">Trash</TabsTrigger>
         </TabsList>
 
-        {/* ✅ This container will scroll instead of the entire page */}
         <div className="flex-grow overflow-auto">
           <TabsContent value="tasks" className="h-full">
-            <TasksTableMock />
+            {/* ✅ Pass missing props */}
+            <TasksTable 
+              tasks={tasks} 
+              projectId={projectId} 
+              users={users} 
+              fetchTasksData={fetchTasksData} 
+            />
           </TabsContent>
           <TabsContent value="inbox" className="h-full">
             <p>Inbox for {project.name} will be displayed here.</p>

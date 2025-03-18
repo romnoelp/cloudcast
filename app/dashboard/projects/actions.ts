@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { Project } from "@/types/project";
+import { Task } from "./(tasks)/task-type";
 
 const checkAdminAccess = async (orgId: string) => {
     const supabase = await createClient();
@@ -102,4 +103,68 @@ export const deleteProject = async (projectId: string, orgId: string) => {
         .eq("id", projectId);
 
     if (error) throw new Error("Failed to delete project");
+};
+
+export const createTask = async (task: Task) => {
+    const supabase = await createClient();
+
+    if (!task.title || !task.project_id || !task.organization_id || !task.created_by || !task.assignee_id) {
+        throw new Error("Missing required fields");
+    }
+
+    const { error } = await supabase
+        .from("tasks")
+        .insert([
+            {
+                title: task.title,
+                label: task.label,
+                priority: task.priority,
+                project_id: task.project_id,
+                organization_id: task.organization_id,
+                created_by: task.created_by,
+                assignee_id: task.assignee_id, 
+            },
+        ]);
+
+    if (error) throw new Error(error.message);
+}
+
+export const fetchTasksForProject = async (projectId: string): Promise<Task[]> => {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+        .from("tasks")
+        .select("*")
+        .eq("project_id", projectId);
+
+    if (error) {
+        console.error("Error fetching tasks:", error);
+        return [];
+    }
+
+    return data as Task[];
+};
+
+export const fetchUsersInProject = async (projectId: string) => {
+    const supabase = await createClient();
+    
+    const { data, error } = await supabase
+        .from("project_members")
+        .select("user_id, users(id, name, avatar_url)") // Fix: users will return an array
+        .eq("project_id", projectId);
+
+    if (error) {
+        console.error("Error fetching users in project:", error);
+        return [];
+    }
+
+    return data.map((member) => {
+        const user = Array.isArray(member.users) ? member.users[0] : member.users; // Ensure a single object
+
+        return {
+            id: user?.id || member.user_id, // Ensure a valid ID
+            name: user?.name || "Unknown",
+            avatar: user?.avatar_url || "",
+        };
+    });
 };
