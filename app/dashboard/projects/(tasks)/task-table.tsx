@@ -23,8 +23,8 @@ import {
     ArrowUp,
     ArrowRight,
     ArrowDown,
-    ChevronDown,
     PlusCircle,
+    UserPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -36,7 +36,6 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-    DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
@@ -48,8 +47,9 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Task, TaskCreateDialogProps } from "./task-type"; 
-import TaskCreateDialog from "./task-create-dialog"; // ✅ Import the TaskCreateDialog
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { Task, TaskCreateDialogProps } from "./task-type";
+import TaskCreateDialog from "./task-create-dialog";
 
 // ✅ Status Icons
 const statusIcons: Record<string, React.ReactNode> = {
@@ -67,7 +67,7 @@ const priorityIcons: Record<string, React.ReactNode> = {
     Low: <ArrowDown className="h-4 w-4" />,
 };
 
-const TasksTable = ({ tasks, projectId, users, fetchTasksData }: { 
+const TasksTable = ({ tasks, projectId, users, fetchTasksData }: {
     tasks: Task[];
     projectId: string;
     users: TaskCreateDialogProps["users"];
@@ -77,7 +77,8 @@ const TasksTable = ({ tasks, projectId, users, fetchTasksData }: {
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
     const [rowSelection, setRowSelection] = useState({});
-    const [isDialogOpen, setIsDialogOpen] = useState(false); // ✅ State for Create Task Dialog
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
 
     const columns: ColumnDef<Task>[] = useMemo(
         () => [
@@ -162,7 +163,7 @@ const TasksTable = ({ tasks, projectId, users, fetchTasksData }: {
     );
 
     const table = useReactTable({
-        data: tasks, 
+        data: tasks,
         columns,
         onSortingChange: setSorting,
         onColumnFiltersChange: setColumnFilters,
@@ -177,8 +178,33 @@ const TasksTable = ({ tasks, projectId, users, fetchTasksData }: {
 
     return (
         <div className="w-full h-full flex flex-col">
-            {/* ✅ Search & Column Toggle */}
-            <div className="flex items-center py-4">
+            {/* ✅ Action Buttons */}
+            <div className="flex items-center justify-between py-4">
+                <div className="flex space-x-2">
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="default" onClick={() => setIsDialogOpen(true)}>
+                                    <PlusCircle className="h-4 w-4 mr-2" /> Create Task
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Create a new task in this project</TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="outline" onClick={() => setIsInviteDialogOpen(true)}>
+                                    <UserPlus className="h-4 w-4 mr-2" /> Invite Users
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Invite organization members to this project</TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
+
+                {/* ✅ Filter Input */}
                 <Input
                     placeholder="Filter tasks..."
                     onChange={(event) => {
@@ -187,82 +213,42 @@ const TasksTable = ({ tasks, projectId, users, fetchTasksData }: {
                     }}
                     className="max-w-sm"
                 />
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="ml-auto">
-                            Columns <ChevronDown />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        {table.getAllColumns().map((column) =>
-                            column.getCanHide() ? (
-                                <DropdownMenuCheckboxItem
-                                    key={column.id}
-                                    className="capitalize"
-                                    checked={column.getIsVisible()}
-                                    onCheckedChange={() => column.toggleVisibility(!column.getIsVisible())}
-                                >
-                                    {column.id}
-                                </DropdownMenuCheckboxItem>
-                            ) : null
-                        )}
-                    </DropdownMenuContent>
-                </DropdownMenu>
             </div>
 
-            {/* ✅ Scrollable Table */}
-            <div className="flex-1 overflow-hidden rounded-md border">
-                <ScrollArea className="h-[550px] overflow-auto">
-                    <Table className="w-full">
-                        <TableHeader>
-                            {table.getHeaderGroups().map((headerGroup) => (
-                                <TableRow key={headerGroup.id}>
-                                    {headerGroup.headers.map((header) => (
-                                        <TableHead key={header.id}>{flexRender(header.column.columnDef.header, header.getContext())}</TableHead>
+            {/* ✅ Table with Scroll */}
+            <ScrollArea className="h-[550px] overflow-auto">
+                <Table className="w-full">
+                    <TableHeader>
+                        {table.getHeaderGroups().map((headerGroup) => (
+                            <TableRow key={headerGroup.id}>
+                                {headerGroup.headers.map((header) => (
+                                    <TableHead key={header.id}>{flexRender(header.column.columnDef.header, header.getContext())}</TableHead>
+                                ))}
+                            </TableRow>
+                        ))}
+                    </TableHeader>
+                    <TableBody>
+                        {table.getRowModel().rows.length > 0 ? (
+                            table.getRowModel().rows.map((row) => (
+                                <TableRow key={row.id}>
+                                    {row.getVisibleCells().map((cell) => (
+                                        <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
                                     ))}
                                 </TableRow>
-                            ))}
-                        </TableHeader>
-                        <TableBody>
-                            {table.getRowModel().rows.length > 0 ? (
-                                table.getRowModel().rows.map((row) => (
-                                    <TableRow key={row.id}>
-                                        {row.getVisibleCells().map((cell) => (
-                                            <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
-                                        ))}
-                                    </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={columns.length} className="text-center py-4">
-                                        No tasks found.
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </ScrollArea>
-            </div>
-
-            {/* ✅ Pagination + Create Task */}
-            <div className="flex items-center justify-between py-4">
-                <Button variant="default" className="flex items-center" onClick={() => setIsDialogOpen(true)}>
-                    <PlusCircle className="h-4 w-4 mr-2" /> Create Task
-                </Button>
-                <div className="space-x-2">
-                    <Button variant="outline" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>Previous</Button>
-                    <Button variant="outline" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>Next</Button>
-                </div>
-            </div>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={columns.length} className="text-center py-4 text-gray-500">
+                                    No tasks found. Create one to get started!
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </ScrollArea>
 
             {/* ✅ Task Create Dialog */}
-            <TaskCreateDialog 
-                isDialogOpen={isDialogOpen} 
-                setIsDialogOpen={setIsDialogOpen} 
-                projectId={projectId}
-                users={users} 
-                fetchTasksData={fetchTasksData}
-            />
+            <TaskCreateDialog isDialogOpen={isDialogOpen} setIsDialogOpen={setIsDialogOpen} projectId={projectId} users={users} fetchTasksData={fetchTasksData} />
         </div>
     );
 };
