@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Dialog,
     DialogContent,
@@ -12,19 +12,30 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { InviteDialogProps } from "./invite-type"; // ✅ Import types
+import { InviteDialogProps } from "./invite-type";
+import { fetchUsersNotInProject } from "../../users/actions"; // ✅ Import function
 
 const ROLES = ["employee", "product-manager"] as const;
 
-const InviteDialog: React.FC<InviteDialogProps> = ({
-    isDialogOpen,
-    setIsDialogOpen,
-    users,
-    projectId,
-    inviteUserToProject,
-}) => {
+export default function InviteDialog({ isDialogOpen, setIsDialogOpen, projectId, orgId, inviteUserToProject }: InviteDialogProps) {
+    const [users, setUsers] = useState<{ id: string; name: string }[]>([]);
+    const [loading, setLoading] = useState(false);
     const [selectedUser, setSelectedUser] = useState("");
     const [selectedRole, setSelectedRole] = useState<"employee" | "product-manager">("employee");
+
+    // ✅ Fetch users dynamically when the dialog opens
+    useEffect(() => {
+        if (isDialogOpen) {
+            setLoading(true);
+            fetchUsersNotInProject(orgId, projectId)
+                .then((fetchedUsers) => setUsers(fetchedUsers))
+                .catch((error) => {
+                    console.error("Error fetching users:", error);
+                    toast.error("Failed to fetch users.");
+                })
+                .finally(() => setLoading(false));
+        }
+    }, [isDialogOpen, orgId, projectId]);
 
     const handleInvite = async () => {
         if (!selectedUser) return toast.error("Please select a user!");
@@ -52,9 +63,9 @@ const InviteDialog: React.FC<InviteDialogProps> = ({
                     {/* User Selection */}
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="user" className="text-right">User</Label>
-                        <Select value={selectedUser} onValueChange={setSelectedUser}>
+                        <Select value={selectedUser} onValueChange={setSelectedUser} disabled={loading || users.length === 0}>
                             <SelectTrigger className="col-span-3">
-                                <SelectValue placeholder="Select user" />
+                                <SelectValue placeholder={loading ? "Loading..." : users.length > 0 ? "Select user" : "No users available"} />
                             </SelectTrigger>
                             <SelectContent>
                                 {users.map((user) => (
@@ -86,11 +97,9 @@ const InviteDialog: React.FC<InviteDialogProps> = ({
 
                 <DialogFooter>
                     <Button variant="secondary" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={handleInvite} disabled={!selectedUser || !selectedRole}>Send Invite</Button>
+                    <Button onClick={handleInvite} disabled={!selectedUser || !selectedRole || users.length === 0}>Send Invite</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
     );
-};
-
-export default InviteDialog;
+}

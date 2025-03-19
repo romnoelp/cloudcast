@@ -38,8 +38,13 @@ import ProjectTableRow from "./project-table-row";
 import ProjectCreateDialog from "./project-create-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import ProjectDetails from "@/app/dashboard/projects/(tasks)/project-details";
-import { fetchProjects, updateProjectStatus, deleteProject } from "@/app/dashboard/projects/actions"; // Import actions
+import ProjectDetails from "./project-details";
+import {
+  fetchProjects,
+  updateProjectStatus,
+  deleteProject,
+  fetchProjectDetails,
+} from "@/app/dashboard/projects/actions";
 
 const ProjectTable = () => {
   const { selectedOrg } = useOrganization();
@@ -71,8 +76,13 @@ const ProjectTable = () => {
     fetchProjectsData();
   }, [fetchProjectsData]);
 
-  const handleOpenProject = (projectId: string) => {
-    setOpenedProjectId(projectId);
+  const handleOpenProject = async (projectId: string) => {
+    const project = await fetchProjectDetails(projectId);
+    if (!project) {
+      toast.error("Project not found.");
+      return;
+    }
+    setOpenedProjectId(project.id);
   };
 
   const handleDeleteProjectAction = async (projectId: string) => {
@@ -113,7 +123,9 @@ const ProjectTable = () => {
     {
       accessorKey: "name",
       header: "Name",
-      cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.name}</span>
+      ),
     },
     {
       accessorKey: "description",
@@ -124,12 +136,13 @@ const ProjectTable = () => {
       header: "Status",
       cell: ({ row }) => (
         <span
-          className={`px-2 py-1 rounded-md text-xs ${row.original.status === "active"
-            ? "bg-green-500 text-white"
-            : row.original.status === "archived"
+          className={`px-2 py-1 rounded-md text-xs ${
+            row.original.status === "active"
+              ? "bg-green-500 text-white"
+              : row.original.status === "archived"
               ? "bg-gray-300"
               : "bg-yellow-400"
-            }`}
+          }`}
         >
           {row.original.status}
         </span>
@@ -146,7 +159,11 @@ const ProjectTable = () => {
           if (!selectedOrg) return;
           try {
             const newStatus = isArchived ? "active" : "archived";
-            await updateProjectStatus(row.original.id, newStatus, selectedOrg.id);
+            await updateProjectStatus(
+              row.original.id,
+              newStatus,
+              selectedOrg.id
+            );
             fetchProjectsData();
             toast.success(
               `Project ${isArchived ? "activated" : "archived"} successfully!`
@@ -171,13 +188,17 @@ const ProjectTable = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => handleOpenProject(row.original.id)}>
+              <DropdownMenuItem
+                onClick={() => handleOpenProject(row.original.id)}
+              >
                 Open
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleStatusChange}>
                 {actionText}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleDeleteProjectAction(row.original.id)}>
+              <DropdownMenuItem
+                onClick={() => handleDeleteProjectAction(row.original.id)}
+              >
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -213,7 +234,10 @@ const ProjectTable = () => {
   return (
     <div className="w-full">
       {openedProjectId ? (
-        <ProjectDetails projectId={openedProjectId} onClose={() => setOpenedProjectId(null)} />
+        <ProjectDetails
+          projectId={openedProjectId}
+          onClose={() => setOpenedProjectId(null)}
+        />
       ) : (
         <>
           <div className="flex items-center py-4">
@@ -241,7 +265,9 @@ const ProjectTable = () => {
                       key={column.id}
                       className="capitalize"
                       checked={column.getIsVisible()}
-                      onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                      onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                      }
                     >
                       {column.id}
                     </DropdownMenuCheckboxItem>
@@ -263,7 +289,10 @@ const ProjectTable = () => {
                       <TableHead key={header.id}>
                         {header.isPlaceholder
                           ? null
-                          : flexRender(header.column.columnDef.header, header.getContext())}
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
                       </TableHead>
                     ))}
                   </TableRow>
@@ -272,17 +301,25 @@ const ProjectTable = () => {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={columns.length} className="h-24 text-center">
+                    <TableCell
+                      colSpan={columns.length}
+                      className="h-24 text-center"
+                    >
                       Loading...
                     </TableCell>
                   </TableRow>
                 ) : table.getRowModel().rows.length ? (
-                  table.getRowModel().rows.map((row) => (
-                    <ProjectTableRow key={row.id} row={row} />
-                  ))
+                  table
+                    .getRowModel()
+                    .rows.map((row) => (
+                      <ProjectTableRow key={row.id} row={row} />
+                    ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={columns.length} className="h-24 text-center">
+                    <TableCell
+                      colSpan={columns.length}
+                      className="h-24 text-center"
+                    >
                       No created projects.
                     </TableCell>
                   </TableRow>

@@ -7,5 +7,6 @@ export type InviteDialogProps = {
         avatar: string;
     }[];
     projectId: string;
+    orgId: string; // ✅ Add this line
     inviteUserToProject: (data: { userId: string; projectId: string; role: "employee" | "product-manager" }) => Promise<void>;
 };

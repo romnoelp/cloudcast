@@ -127,3 +127,27 @@
   }
 }
 
+.gradient-background {
+  background: linear-gradient(135deg, #3b82f6, #1e3a8a, #0f172a);
+  background-size: 200% 200%;
+  animation: swirly-water 12s infinite linear;
+}
+
+@keyframes swirly-water {
+  0% {
+    background-position: 100% 50%;
+  }
+  25% {
+    background-position: 50% 0%;
+  }
+  50% {
+    background-position: 0% 100%;
+  }
+  75% {
+    background-position: 100% 100%;
+  }
+  100% {
+    background-position: 50% 0%;
+  }
+}
+

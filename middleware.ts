@@ -10,9 +10,20 @@ export const middleware = async (request: NextRequest) => {
             {
                 cookies: {
                     getAll: () => request.cookies.getAll(),
+                    setAll: (cookies) => {
+                        cookies.forEach((cookie) => {
+                            request.cookies.set({
+                                name: cookie.name,
+                                value: cookie.value,
+                                ...cookie.options,
+                            });
+                        });
+                    }
+                    
                 },
             }
         );
+        
 
         const {
             data: { user },
