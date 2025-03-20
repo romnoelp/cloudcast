@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useUser } from "@/context/user-context"; // ✅ Import useUser
 import {
     Dialog,
     DialogContent,
@@ -18,6 +19,7 @@ import { fetchUsersNotInProject } from "../../users/actions"; // ✅ Import func
 const ROLES = ["employee", "product-manager"] as const;
 
 export default function InviteDialog({ isDialogOpen, setIsDialogOpen, projectId, orgId, inviteUserToProject }: InviteDialogProps) {
+    const { user } = useUser(); // ✅ Get user context
     const [users, setUsers] = useState<{ id: string; name: string }[]>([]);
     const [loading, setLoading] = useState(false);
     const [selectedUser, setSelectedUser] = useState("");
@@ -42,7 +44,12 @@ export default function InviteDialog({ isDialogOpen, setIsDialogOpen, projectId,
         if (!selectedRole) return toast.error("Please select a role!");
 
         try {
-            await inviteUserToProject({ userId: selectedUser, projectId, role: selectedRole });
+            await inviteUserToProject({
+                userId: selectedUser,
+                projectId,
+                role: selectedRole,
+                senderId: user?.id || "", // ✅ Fix: Use user from context
+            });
             toast.success("User invited successfully!");
             setIsDialogOpen(false);
             setSelectedUser("");
