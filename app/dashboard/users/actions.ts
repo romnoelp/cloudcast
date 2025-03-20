@@ -130,40 +130,69 @@ export const removeUser = async (userId: User["user_id"], orgId: string) => {
   if (error) throw new Error("Failed to remove user");
 };
 
-// TODO : Fix this part
-
 export const inviteUserToProject = async ({
   userId,
   projectId,
   role,
+  senderId,
 }: {
   userId: string;
   projectId: string;
   role: "employee" | "product-manager";
+  senderId: string;
 }) => {
   const supabase = await createClient();
 
-  const { data: existingMember, error: checkError } = await supabase
+  const { error } = await supabase
     .from("project_members")
-    .select("id")
-    .match({ user_id: userId, project_id: projectId })
-    .single();
+    .insert([
+      {
+        user_id: userId,
+        project_id: projectId,
+        role,
+        status: "pending_invite",
+      },
+    ]);
 
-  if (checkError && checkError.code !== "PGRST116") {
-    throw new Error("Error checking user membership");
-  }
+    if (error) {
+      console.error("❌ Supabase Error:", error);
+      throw new Error("Failed to invite user to project");
+    }
 
-  if (existingMember) {
-    throw new Error("User is already a member of this project");
-  }
-
-  const { error } = await supabase.from("project_members").insert([
+  await supabase.from("notifications").insert([
     {
       user_id: userId,
-      project_id: projectId,
-      role: role,
+      sender_id: senderId,
+      type: "project_invite",
+      message: "You have been invited to a project!",
+      data: { project_id: projectId },
+      is_read: false,
     },
   ]);
+};
 
-  if (error) throw new Error("Failed to invite user to project");
+export const fetchNotifications = async (userId: string) => {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("notifications")
+    .select("id, message, is_read, created_at, sender_id, project_id")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching notifications:", error);
+    return [];
+  }
+
+  return data;
+};
+
+export const markNotificationAsRead = async (notificationId: string) => {
+  const supabase = await createClient();
+
+  await supabase
+    .from("notifications")
+    .update({ is_read: true })
+    .eq("id", notificationId);
 };

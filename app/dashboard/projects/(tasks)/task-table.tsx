@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { fetchTasksForProject, fetchUsersInProject } from "../actions"; // Import server actions
 import {
   ColumnDef,
   SortingState,
@@ -57,6 +58,7 @@ import { Task, TaskCreateDialogProps } from "./task-type";
 import TaskCreateDialog from "./task-create-dialog";
 import InviteDialog from "../(invite-user)/invite-dialog";
 import { inviteUserToProject } from "../../users/actions";
+import { useUser } from "@/context/user-context";
 
 const statusIcons: Record<string, React.ReactNode> = {
   "In Progress": <Clock className="h-4 w-4" />,
@@ -73,17 +75,11 @@ const priorityIcons: Record<string, React.ReactNode> = {
 };
 
 const TasksTable = ({
-  tasks,
   projectId,
   orgId,
-  users,
-  fetchTasksData,
 }: {
-  tasks: Task[];
   projectId: string;
   orgId: string;
-  users: TaskCreateDialogProps["users"];
-  fetchTasksData: () => void;
 }) => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -91,6 +87,24 @@ const TasksTable = ({
   const [rowSelection, setRowSelection] = useState({});
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [users, setUsers] = useState<TaskCreateDialogProps["users"]>([]);
+  const { user } = useUser();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const fetchedTasks = await fetchTasksForProject(projectId);
+        setTasks(fetchedTasks);
+        const fetchedUsers = await fetchUsersInProject(projectId);
+        setUsers(fetchedUsers);
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+      }
+    };
+
+    fetchData();
+  }, [projectId]);
 
   const columns: ColumnDef<Task>[] = useMemo(
     () => [
@@ -154,7 +168,12 @@ const TasksTable = ({
       {
         accessorKey: "assignee_id",
         header: "Assignee",
-        cell: ({ row }) => <span>{row.original.assignee_id}</span>,
+        cell: ({ row }) => (
+          <span>
+            {users.find((u) => u.id === row.original.assignee_id)?.name ||
+              "Unknown"}
+          </span>
+        ),
       },
       {
         id: "actions",
@@ -176,7 +195,7 @@ const TasksTable = ({
         ),
       },
     ],
-    []
+    [users]
   );
 
   const table = useReactTable({
@@ -195,7 +214,6 @@ const TasksTable = ({
 
   return (
     <div className="w-full h-full flex flex-col">
-      {/* ✅ Action Buttons */}
       <div className="flex items-center justify-between py-4">
         <div className="flex space-x-2">
           <TooltipProvider>
@@ -226,7 +244,6 @@ const TasksTable = ({
           </TooltipProvider>
         </div>
 
-        {/* ✅ Filter Input */}
         <Input
           placeholder="Filter tasks..."
           onChange={(event) => {
@@ -236,8 +253,6 @@ const TasksTable = ({
           className="max-w-sm"
         />
       </div>
-
-      {/* ✅ Table with Scroll */}
       <ScrollArea className="h-[550px] overflow-auto">
         <Table className="w-full">
           <TableHeader>
@@ -282,13 +297,22 @@ const TasksTable = ({
         </Table>
       </ScrollArea>
 
-      {/* ✅ Invite & Task Create Dialogs */}
       <TaskCreateDialog
         isDialogOpen={isDialogOpen}
         setIsDialogOpen={setIsDialogOpen}
         projectId={projectId}
         users={users}
-        fetchTasksData={fetchTasksData}
+        fetchTasksData={() => {
+          const fetchData = async () => {
+            try {
+              const fetchedTasks = await fetchTasksForProject(projectId);
+              setTasks(fetchedTasks);
+            } catch (error) {
+              console.error("Failed to fetch data:", error);
+            }
+          };
+          fetchData();
+        }}
       />
       <InviteDialog
         isDialogOpen={isInviteDialogOpen}
@@ -296,7 +320,12 @@ const TasksTable = ({
         users={users}
         projectId={projectId}
         orgId={orgId}
-        inviteUserToProject={inviteUserToProject}
+        inviteUserToProject={(data) =>
+          inviteUserToProject({
+            ...data,
+            senderId: user?.id || "",
+          })
+        }
       />
     </div>
   );

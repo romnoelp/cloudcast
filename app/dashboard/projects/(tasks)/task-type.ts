@@ -13,8 +13,9 @@ export type TaskCreateDialogProps = {
 export type Task = {
     id?: string; 
     project_id: string;  
-    organization_id: string; 
+    organization_id: string;  
     title: string;
+    description: string;
     label: "Feature" | "Bug" | "Improvement"; 
     priority: "High" | "Medium" | "Low"; 
     status: "Todo" | "In Progress" | "Done" | "Backlog" | "Canceled"; 

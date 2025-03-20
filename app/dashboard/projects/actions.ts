@@ -117,24 +117,27 @@ export const createTask = async (task: Task) => {
         .insert([
             {
                 title: task.title,
+                description: task.description, 
+                organization_id: task.organization_id,
+                project_id: task.project_id,
+                assignee_id: task.assignee_id,
+                created_by: task.created_by,
                 label: task.label,
                 priority: task.priority,
-                project_id: task.project_id,
-                organization_id: task.organization_id,
-                created_by: task.created_by,
-                assignee_id: task.assignee_id, 
+                status: task.status,
             },
         ]);
 
     if (error) throw new Error(error.message);
-}
+};
+
 
 export const fetchTasksForProject = async (projectId: string): Promise<Task[]> => {
     const supabase = await createClient();
 
     const { data, error } = await supabase
         .from("tasks")
-        .select("*")
+        .select("id, title, description, label, priority, status, assignee_id, created_by, created_at")
         .eq("project_id", projectId);
 
     if (error) {
@@ -150,19 +153,26 @@ export const fetchUsersInProject = async (projectId: string) => {
     
     const { data, error } = await supabase
         .from("project_members")
-        .select("user_id, users(id, name, avatar_url)") // Fix: users will return an array
+        .select("user_id, users!inner(id, name, avatar_url)")
         .eq("project_id", projectId);
 
     if (error) {
-        console.error("Error fetching users in project:", error);
+        console.error("❌ Error fetching users in project:", error);
+        return [];
+    }
+
+    console.log("✅ Users in project (raw response):", data); // 🔥 Debugging log
+
+    if (!Array.isArray(data)) {
+        console.error("❌ Expected array but got:", data);
         return [];
     }
 
     return data.map((member) => {
-        const user = Array.isArray(member.users) ? member.users[0] : member.users; // Ensure a single object
+        const user = Array.isArray(member.users) ? member.users[0] : member.users; // ✅ Handle array case
 
         return {
-            id: user?.id || member.user_id, // Ensure a valid ID
+            id: user?.id || member.user_id, 
             name: user?.name || "Unknown",
             avatar: user?.avatar_url || "",
         };
