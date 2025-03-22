@@ -12,6 +12,7 @@ import {
   fetchTasksForProject,
   fetchUsersInProject,
 } from "@/app/dashboard/projects/actions";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface ProjectDetailsProps {
   projectId: string;
@@ -64,7 +65,18 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
   return (
     <div className="flex flex-col w-full h-full p-4 overflow-hidden">
       <div className="flex justify-between items-center pb-4">
-        <h2 className="text-3xl font-bold tracking-tight">{project.name}</h2>
+        <div className="flex items-center space-x-2">
+          <h2 className="text-3xl font-bold tracking-tight">{project.name}</h2>
+          <Avatar className="w-2 h-2">
+            <AvatarFallback
+              className={`text-xs font-medium uppercase ${
+                project.status === "active"
+                  ? "bg-green-500 text-white"
+                  : "bg-gray-300"
+              }`}
+            ></AvatarFallback>
+          </Avatar>
+        </div>
         <Button onClick={onClose}>Back to List</Button>
       </div>
 
@@ -87,7 +99,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
               projectId={projectId}
               orgId={project.organization_id}
               users={users}
-              fetchTasksData={fetchTasksData} 
+              fetchTasksData={fetchTasksData}
             />
           </TabsContent>
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   ColumnDef,
   SortingState,
@@ -16,6 +16,7 @@ import {
 import {
   MoreHorizontal,
   CheckCircle,
+  ChevronDown,
   Clock,
   Circle,
   Ban,
@@ -25,6 +26,9 @@ import {
   ArrowDown,
   PlusCircle,
   UserPlus,
+  Tag,
+  ListChecks,
+  Flag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -58,6 +62,23 @@ import TaskCreateDialog from "./task-create-dialog";
 import InviteDialog from "../(invite-user)/invite-dialog";
 import { inviteUserToProject } from "../../users/actions";
 import { useUser } from "@/context/user-context";
+import {
+  subscribeToTasks,
+  unsubscribeFromTasks,
+  RealtimeTaskPayload,
+} from "@/lib/supabase/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import { deleteTask, updateTask } from "./actions";
 
 const statusIcons: Record<string, React.ReactNode> = {
   "In Progress": <Clock className="h-4 w-4" />,
@@ -76,25 +97,97 @@ const priorityIcons: Record<string, React.ReactNode> = {
 const TasksTable = ({
   projectId,
   orgId,
-  tasks,
+  tasks: initialTasks,
   users,
   fetchTasksData,
 }: {
   projectId: string;
   orgId: string;
   tasks: Task[];
-  setTasks: React.Dispatch<React.SetStateAction<Task[]>>; 
   users: TaskCreateDialogProps["users"];
   fetchTasksData: () => void;
 }) => {
-
+  const [tasks, setTasksState] = useState<Task[]>(initialTasks);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
+  const [editTask, setEditTask] = useState<Task | null>(null);
   const { user } = useUser();
+
+  const handleDeleteTask = useCallback(async () => {
+    if (!deleteTaskId) return;
+    try {
+      console.log("Deleting task:", deleteTaskId);
+      await deleteTask(deleteTaskId, projectId);
+      toast.success("Task deleted successfully.");
+      fetchTasksData();
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.error("Failed to delete task.");
+    } finally {
+      setDeleteTaskId(null);
+    }
+  }, [projectId, deleteTaskId, fetchTasksData]);
+
+  const handleUpdateTask = async () => {
+    if (!editTask?.id) {
+      console.error("Task ID is undefined.");
+      toast.error("Error: Task ID is missing.");
+      return;
+    }
+
+    try {
+      console.log("Updating task:", editTask);
+      await updateTask(editTask.id, editTask);
+      toast.success("Task updated successfully.");
+      fetchTasksData();
+    } catch (error) {
+      console.error("Update error:", error);
+      toast.error("Failed to update task.");
+    } finally {
+      setEditTask(null);
+    }
+  };
+
+  useEffect(() => {
+    const handleTaskUpdate = (payload: RealtimeTaskPayload) => {
+      setTasksState((prevTasks) => {
+        switch (payload.eventType) {
+          case "INSERT":
+            return [...prevTasks, payload.new as Task];
+
+          case "UPDATE":
+            return prevTasks.map((task) =>
+              task.id === (payload.new as Task).id
+                ? (payload.new as Task)
+                : task
+            );
+
+          case "DELETE":
+            return prevTasks.filter((task) => task.id !== payload.old?.id);
+
+          default:
+            return prevTasks;
+        }
+      });
+
+      fetchTasksData(); // 🔥 Ensures UI syncs with DB
+    };
+
+    subscribeToTasks(projectId, handleTaskUpdate);
+
+    return () => {
+      unsubscribeFromTasks();
+    };
+  }, [projectId, fetchTasksData]);
+
+  useEffect(() => {
+    setTasksState(initialTasks);
+  }, [initialTasks]);
 
   const columns: ColumnDef<Task>[] = useMemo(
     () => [
@@ -168,7 +261,7 @@ const TasksTable = ({
       {
         id: "actions",
         enableHiding: false,
-        cell: () => (
+        cell: ({ row }) => (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
@@ -177,9 +270,31 @@ const TasksTable = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem>Edit</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Delete</DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  if (row.original?.id) {
+                    setEditTask(row.original);
+                  } else {
+                    console.error("Task data is missing or undefined.");
+                    toast.error("Error: Could not load task data.");
+                  }
+                }}
+              >
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  if (row.original.id) {
+                    setDeleteTaskId(row.original.id);
+                  } else {
+                    console.error("Task ID is undefined.");
+                    toast.error("Error: Could not get task ID");
+                  }
+                }}
+              >
+                Delete
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         ),
@@ -292,7 +407,7 @@ const TasksTable = ({
         setIsDialogOpen={setIsDialogOpen}
         projectId={projectId}
         users={users}
-        fetchTasksData={fetchTasksData} 
+        fetchTasksData={fetchTasksData}
       />
       <InviteDialog
         isDialogOpen={isInviteDialogOpen}
@@ -307,6 +422,169 @@ const TasksTable = ({
           })
         }
       />
+      <AlertDialog
+        open={!!editTask}
+        onOpenChange={(open) => !open && setEditTask(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Edit Task</AlertDialogTitle>
+            <AlertDialogDescription>
+              Modify the task details and save changes.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {/* Title & Description */}
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-gray-300">Title</label>
+              <Input
+                value={editTask?.title || ""}
+                onChange={(e) =>
+                  setEditTask(
+                    (prev) => prev && { ...prev, title: e.target.value }
+                  )
+                }
+                placeholder="Task Title"
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-gray-300">
+                Description
+              </label>
+              <Input
+                value={editTask?.description || ""}
+                onChange={(e) =>
+                  setEditTask(
+                    (prev) => prev && { ...prev, description: e.target.value }
+                  )
+                }
+                placeholder="Task Description"
+              />
+            </div>
+
+            {/* Label & Status (Side by Side) */}
+            {/* Label, Status & Priority in One Line */}
+<div className="flex gap-4">
+  {/* Label */}
+  <div className="flex flex-col flex-1">
+    <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+      <Tag className="h-4 w-4" /> Label
+    </label>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" className="w-full flex items-center justify-between">
+          {editTask?.label || "Select Label"}
+          <ChevronDown className="h-4 w-4 opacity-50" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>
+        {["Feature", "Bug", "Improvement"].map((label) => (
+          <DropdownMenuItem
+            key={label}
+            onSelect={() =>
+              setEditTask((prev) => prev && { ...prev, label: label as "Feature" | "Bug" | "Improvement" })
+            }
+          >
+            {label}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  </div>
+
+  {/* Status */}
+  <div className="flex flex-col flex-1">
+    <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+      <ListChecks className="h-4 w-4" /> Status
+    </label>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" className="w-full flex items-center justify-between">
+          {editTask?.status || "Select Status"}
+          <ChevronDown className="h-4 w-4 opacity-50" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>
+        {["Todo", "In Progress", "Done", "Backlog", "Canceled"].map((status) => (
+          <DropdownMenuItem
+            key={status}
+            onSelect={() =>
+              setEditTask((prev) => prev && { ...prev, status: status as "Todo" | "In Progress" | "Done" | "Backlog" | "Canceled" })
+            }
+          >
+            {status}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  </div>
+
+  {/* Priority */}
+  <div className="flex flex-col flex-1">
+    <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+      <Flag className="h-4 w-4" /> Priority
+    </label>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" className="w-full flex items-center justify-between">
+          {editTask?.priority || "Select Priority"}
+          <ChevronDown className="h-4 w-4 opacity-50" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>
+        {["Low", "Medium", "High"].map((priority) => (
+          <DropdownMenuItem
+            key={priority}
+            onSelect={() =>
+              setEditTask((prev) => prev && { ...prev, priority: priority as "High" | "Medium" | "Low" })
+            }
+          >
+            {priority}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  </div>
+</div>
+
+          </div>
+
+          {/* Buttons */}
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setEditTask(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleUpdateTask}>
+              Save Changes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={!!deleteTaskId}
+        onOpenChange={(open) => !open && setDeleteTaskId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              task.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteTaskId(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteTask}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
