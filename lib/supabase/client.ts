@@ -12,18 +12,11 @@ const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-// ✅ Keep track of active channels to avoid duplicates
 let notificationChannel: RealtimeChannel | null = null;
 let tasksChannel: RealtimeChannel | null = null;
 
-/**
- * Returns a singleton instance of the Supabase client.
- */
 export const createClient = () => supabase;
 
-/**
- * Defines a strict type for notifications received in real-time.
- */
 type RealtimeNotificationPayload = RealtimePostgresInsertPayload<{
   id: string;
   user_id: string;
@@ -36,9 +29,6 @@ type RealtimeNotificationPayload = RealtimePostgresInsertPayload<{
   data?: Record<string, unknown>;
 }>;
 
-/**
- * Subscribes to real-time notifications for a specific user.
- */
 export const subscribeToNotifications = (
   userId: string,
   callback: (payload: RealtimeNotificationPayload) => void
@@ -62,9 +52,6 @@ export const subscribeToNotifications = (
     .subscribe();
 };
 
-/**
- * Unsubscribes from the notifications channel when the component unmounts.
- */
 export const unsubscribeFromNotifications = () => {
   if (notificationChannel) {
     supabase.removeChannel(notificationChannel);
@@ -72,23 +59,25 @@ export const unsubscribeFromNotifications = () => {
   }
 };
 
-/**
- * Defines a strict type for task updates in real-time.
- */
 export type RealtimeTaskPayload =
-  | (RealtimePostgresInsertPayload<{ id: string; title: string; status: string }> & {
+  | (RealtimePostgresInsertPayload<{
+      id: string;
+      title: string;
+      status: string;
+    }> & {
       eventType: "INSERT";
     })
-  | (RealtimePostgresUpdatePayload<{ id: string; title: string; status: string }> & {
+  | (RealtimePostgresUpdatePayload<{
+      id: string;
+      title: string;
+      status: string;
+    }> & {
       eventType: "UPDATE";
     })
   | (RealtimePostgresDeletePayload<{ id: string }> & {
       eventType: "DELETE";
     });
 
-/**
- * Subscribes to real-time task updates within a project.
- */
 export const subscribeToTasks = (
   projectId: string,
   callback: (payload: RealtimeTaskPayload) => void
@@ -100,13 +89,13 @@ export const subscribeToTasks = (
     .on(
       "postgres_changes",
       {
-        event: "*", // ✅ INSERT, UPDATE, DELETE
+        event: "*",
         schema: "public",
         table: "tasks",
         filter: `project_id=eq.${projectId}`,
       },
       (payload) => {
-        console.log("📡 Realtime Task Event Received:", payload); // ✅ Debugging Log
+        console.log("📡 Realtime Task Event Received:", payload);
 
         const eventType = payload.eventType as "INSERT" | "UPDATE" | "DELETE";
         callback({ ...payload, eventType } as RealtimeTaskPayload);

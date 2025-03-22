@@ -6,7 +6,7 @@ import { Task } from "./task-type";
 export const deleteTask = async (taskId: string, projectId: string) => {
   const supabase = await createClient();
 
-  console.log("Deleting task from Supabase:", { taskId, projectId }); // 🛠️ Debugging Log
+  console.log("Deleting task from Supabase:", { taskId, projectId }); 
 
   const { error } = await supabase
     .from("tasks")
@@ -14,18 +14,18 @@ export const deleteTask = async (taskId: string, projectId: string) => {
     .match({ id: taskId, project_id: projectId });
 
   if (error) {
-    console.error("Supabase delete error:", error); // 🛠️ Debugging Log
+    console.error("Supabase delete error:", error); 
     throw new Error("Failed to delete task.");
   }
 
-  console.log("Task deleted successfully!"); // 🛠️ Debugging Log
+  console.log("Task deleted successfully!");
   return { success: true };
 };
 
 export const updateTask = async (taskId: string, updatedData: Partial<Task>) => {
     const supabase = await createClient();
   
-    console.log("Updating task in Supabase:", { taskId, updatedData }); // 🛠️ Debugging Log
+    console.log("Updating task in Supabase:", { taskId, updatedData }); 
   
     const { error } = await supabase
       .from("tasks")
@@ -33,10 +33,10 @@ export const updateTask = async (taskId: string, updatedData: Partial<Task>) => 
       .match({ id: taskId });
   
     if (error) {
-      console.error("Supabase update error:", error); // 🛠️ Debugging Log
+      console.error("Supabase update error:", error); 
       throw new Error("Failed to update task.");
     }
   
-    console.log("Task updated successfully!"); // 🛠️ Debugging Log
+    console.log("Task updated successfully!"); 
     return { success: true };
   };

@@ -161,7 +161,7 @@ export const fetchUsersInProject = async (projectId: string) => {
         return [];
     }
 
-    console.log("✅ Users in project (raw response):", data); // 🔥 Debugging log
+    console.log("✅ Users in project (raw response):", data); 
 
     if (!Array.isArray(data)) {
         console.error("❌ Expected array but got:", data);
@@ -169,7 +169,7 @@ export const fetchUsersInProject = async (projectId: string) => {
     }
 
     return data.map((member) => {
-        const user = Array.isArray(member.users) ? member.users[0] : member.users; // ✅ Handle array case
+        const user = Array.isArray(member.users) ? member.users[0] : member.users; 
 
         return {
             id: user?.id || member.user_id, 

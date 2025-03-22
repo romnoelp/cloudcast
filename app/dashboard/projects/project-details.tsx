@@ -95,7 +95,6 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
           <TabsContent value="tasks" className="h-full">
             <TasksTable
               tasks={tasks}
-              setTasks={setTasks}
               projectId={projectId}
               orgId={project.organization_id}
               users={users}

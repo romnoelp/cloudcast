@@ -175,7 +175,7 @@ const TasksTable = ({
         }
       });
 
-      fetchTasksData(); // 🔥 Ensures UI syncs with DB
+      fetchTasksData();
     };
 
     subscribeToTasks(projectId, handleTaskUpdate);
@@ -466,89 +466,124 @@ const TasksTable = ({
 
             {/* Label & Status (Side by Side) */}
             {/* Label, Status & Priority in One Line */}
-<div className="flex gap-4">
-  {/* Label */}
-  <div className="flex flex-col flex-1">
-    <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
-      <Tag className="h-4 w-4" /> Label
-    </label>
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="w-full flex items-center justify-between">
-          {editTask?.label || "Select Label"}
-          <ChevronDown className="h-4 w-4 opacity-50" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent>
-        {["Feature", "Bug", "Improvement"].map((label) => (
-          <DropdownMenuItem
-            key={label}
-            onSelect={() =>
-              setEditTask((prev) => prev && { ...prev, label: label as "Feature" | "Bug" | "Improvement" })
-            }
-          >
-            {label}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  </div>
+            <div className="flex gap-4">
+              {/* Label */}
+              <div className="flex flex-col flex-1">
+                <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                  <Tag className="h-4 w-4" /> Label
+                </label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full flex items-center justify-between"
+                    >
+                      {editTask?.label || "Select Label"}
+                      <ChevronDown className="h-4 w-4 opacity-50" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    {["Feature", "Bug", "Improvement"].map((label) => (
+                      <DropdownMenuItem
+                        key={label}
+                        onSelect={() =>
+                          setEditTask(
+                            (prev) =>
+                              prev && {
+                                ...prev,
+                                label: label as
+                                  | "Feature"
+                                  | "Bug"
+                                  | "Improvement",
+                              }
+                          )
+                        }
+                      >
+                        {label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
 
-  {/* Status */}
-  <div className="flex flex-col flex-1">
-    <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
-      <ListChecks className="h-4 w-4" /> Status
-    </label>
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="w-full flex items-center justify-between">
-          {editTask?.status || "Select Status"}
-          <ChevronDown className="h-4 w-4 opacity-50" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent>
-        {["Todo", "In Progress", "Done", "Backlog", "Canceled"].map((status) => (
-          <DropdownMenuItem
-            key={status}
-            onSelect={() =>
-              setEditTask((prev) => prev && { ...prev, status: status as "Todo" | "In Progress" | "Done" | "Backlog" | "Canceled" })
-            }
-          >
-            {status}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  </div>
+              {/* Status */}
+              <div className="flex flex-col flex-1">
+                <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                  <ListChecks className="h-4 w-4" /> Status
+                </label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full flex items-center justify-between"
+                    >
+                      {editTask?.status || "Select Status"}
+                      <ChevronDown className="h-4 w-4 opacity-50" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    {["Todo", "In Progress", "Done", "Backlog", "Canceled"].map(
+                      (status) => (
+                        <DropdownMenuItem
+                          key={status}
+                          onSelect={() =>
+                            setEditTask(
+                              (prev) =>
+                                prev && {
+                                  ...prev,
+                                  status: status as
+                                    | "Todo"
+                                    | "In Progress"
+                                    | "Done"
+                                    | "Backlog"
+                                    | "Canceled",
+                                }
+                            )
+                          }
+                        >
+                          {status}
+                        </DropdownMenuItem>
+                      )
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
 
-  {/* Priority */}
-  <div className="flex flex-col flex-1">
-    <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
-      <Flag className="h-4 w-4" /> Priority
-    </label>
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="w-full flex items-center justify-between">
-          {editTask?.priority || "Select Priority"}
-          <ChevronDown className="h-4 w-4 opacity-50" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent>
-        {["Low", "Medium", "High"].map((priority) => (
-          <DropdownMenuItem
-            key={priority}
-            onSelect={() =>
-              setEditTask((prev) => prev && { ...prev, priority: priority as "High" | "Medium" | "Low" })
-            }
-          >
-            {priority}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  </div>
-</div>
-
+              <div className="flex flex-col flex-1">
+                <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                  <Flag className="h-4 w-4" /> Priority
+                </label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full flex items-center justify-between"
+                    >
+                      {editTask?.priority || "Select Priority"}
+                      <ChevronDown className="h-4 w-4 opacity-50" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    {["Low", "Medium", "High"].map((priority) => (
+                      <DropdownMenuItem
+                        key={priority}
+                        onSelect={() =>
+                          setEditTask(
+                            (prev) =>
+                              prev && {
+                                ...prev,
+                                priority: priority as "High" | "Medium" | "Low",
+                              }
+                          )
+                        }
+                      >
+                        {priority}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
           </div>
 
           {/* Buttons */}
