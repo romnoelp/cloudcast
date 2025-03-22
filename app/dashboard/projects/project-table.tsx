@@ -45,6 +45,7 @@ import {
   deleteProject,
   fetchProjectDetails,
 } from "@/app/dashboard/projects/actions";
+import { useUser } from "@/context/user-context";
 
 const ProjectTable = () => {
   const { selectedOrg } = useOrganization();
@@ -57,24 +58,30 @@ const ProjectTable = () => {
   const [filterValue, setFilterValue] = useState<string>("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [openedProjectId, setOpenedProjectId] = useState<string | null>(null);
+  const { role } = useUser();
 
   const fetchProjectsData = useCallback(async () => {
     if (!selectedOrg) return;
     setLoading(true);
     try {
       const fetchedProjects = await fetchProjects(selectedOrg.id);
-      setProjects(fetchedProjects);
+      
+      const filteredProjects = role === "admin"
+        ? fetchedProjects 
+        : fetchedProjects.filter(project => project.status !== "archived");
+  
+      setProjects(filteredProjects);
     } catch (error) {
       console.error("Fetch error:", error);
       toast.error("Failed to fetch projects.");
     } finally {
       setLoading(false);
     }
-  }, [selectedOrg]);
+  }, [selectedOrg, role]);
 
   useEffect(() => {
     fetchProjectsData();
-  }, [fetchProjectsData]);
+  }, [fetchProjectsData, role]);
 
   const handleOpenProject = async (projectId: string) => {
     const project = await fetchProjectDetails(projectId);
@@ -86,7 +93,7 @@ const ProjectTable = () => {
   };
 
   const handleDeleteProjectAction = async (projectId: string) => {
-    if (!selectedOrg) return;
+    if (!selectedOrg || role !== "admin") return;
     try {
       await deleteProject(projectId, selectedOrg.id);
       fetchProjectsData();
@@ -96,7 +103,6 @@ const ProjectTable = () => {
       toast.error("Failed to delete project.");
     }
   };
-
   const columns: ColumnDef<Project>[] = [
     {
       id: "select",
@@ -156,7 +162,7 @@ const ProjectTable = () => {
         const actionText = isArchived ? "Activate" : "Archive";
 
         const handleStatusChange = async () => {
-          if (!selectedOrg) return;
+          if (!selectedOrg || role !== "admin") return;
           try {
             const newStatus = isArchived ? "active" : "archived";
             await updateProjectStatus(
@@ -193,14 +199,18 @@ const ProjectTable = () => {
               >
                 Open
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleStatusChange}>
-                {actionText}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => handleDeleteProjectAction(row.original.id)}
-              >
-                Delete
-              </DropdownMenuItem>
+              {role === "admin" && ( 
+                <DropdownMenuItem onClick={handleStatusChange}>
+                  {actionText}
+                </DropdownMenuItem>
+              )}
+              {role === "admin" && ( 
+                <DropdownMenuItem
+                  onClick={() => handleDeleteProjectAction(row.original.id)}
+                >
+                  Delete
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         );
@@ -241,9 +251,11 @@ const ProjectTable = () => {
       ) : (
         <>
           <div className="flex items-center py-4">
-            <Button className="mr-2" onClick={() => setIsDialogOpen(true)}>
-              Create Project
-            </Button>
+            {role === "admin" && ( 
+              <Button className="mr-2" onClick={() => setIsDialogOpen(true)}>
+                Create Project
+              </Button>
+            )}
             <Input
               placeholder="Filter projects..."
               value={filterValue}
