@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea"; 
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -29,6 +29,7 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
+import { Loader2 } from "lucide-react";
 import { useOrganization } from "@/context/organization-context";
 import { useUser } from "@/context/user-context";
 import { toast } from "sonner";
@@ -46,7 +47,7 @@ const TaskCreateDialog: React.FC<TaskCreateDialogProps> = ({
   projectId,
 }) => {
   const [taskTitle, setTaskTitle] = useState("");
-  const [taskDescription, setTaskDescription] = useState(""); 
+  const [taskDescription, setTaskDescription] = useState("");
   const [taskLabel, setTaskLabel] = useState<"Feature" | "Bug" | "Improvement">(
     "Feature"
   );
@@ -54,23 +55,25 @@ const TaskCreateDialog: React.FC<TaskCreateDialogProps> = ({
     "Medium"
   );
   const [assignee, setAssignee] = useState("");
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false); 
-
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const { selectedOrg } = useOrganization();
   const { user } = useUser();
-
-  const hasUnsavedChanges = taskTitle || taskDescription || assignee; 
+  const hasUnsavedChanges = taskTitle || taskDescription || assignee;
+  const [loading, setLoading] = useState(false);
 
   const handleCreateTask = async () => {
-    if (!selectedOrg) return toast.error("No organization selected!");
-    if (!user || !user.id) return toast.error("User not found!");
-    if (!assignee) return toast.error("Please select an assignee!");
-    if (!projectId) return toast.error("No project selected!");
+    if (!selectedOrg || !user || !assignee || !projectId) {
+      return toast.error("All fields are required!");
+    }
+
+    setLoading(true);
+
+    setLoading(true);
 
     try {
       await createTask({
         title: taskTitle,
-        description: taskDescription, 
+        description: taskDescription,
         label: taskLabel,
         priority: taskPriority,
         status: "Todo",
@@ -80,18 +83,20 @@ const TaskCreateDialog: React.FC<TaskCreateDialogProps> = ({
         created_by: user.id,
       });
 
-      fetchTasksData();
+      await fetchTasksData();
       handleCloseDialog();
       toast.success("Task created successfully!");
     } catch (error) {
       console.error("❌ Error creating task:", error);
       toast.error("Failed to create task.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleCloseDialog = () => {
     setTaskTitle("");
-    setTaskDescription(""); 
+    setTaskDescription("");
     setTaskLabel("Feature");
     setTaskPriority("Medium");
     setAssignee("");
@@ -106,7 +111,7 @@ const TaskCreateDialog: React.FC<TaskCreateDialogProps> = ({
           if (open) {
             setIsDialogOpen(true);
           } else if (hasUnsavedChanges) {
-            setShowConfirmDialog(true); // ✅ Show confirmation dialog before closing
+            setShowConfirmDialog(true);
           } else {
             handleCloseDialog();
           }
@@ -214,9 +219,20 @@ const TaskCreateDialog: React.FC<TaskCreateDialogProps> = ({
             </Button>
             <Button
               onClick={handleCreateTask}
-              disabled={!taskTitle.trim() || !taskDescription.trim() || !assignee}
+              disabled={
+                loading ||
+                !taskTitle.trim() ||
+                !taskDescription.trim() ||
+                !assignee
+              }
             >
-              Create Task
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" /> Creating...
+                </>
+              ) : (
+                "Create Task"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

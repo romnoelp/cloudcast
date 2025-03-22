@@ -28,6 +28,10 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
     { id: string; name: string; avatar: string }[]
   >([]);
   const [loading, setLoading] = useState(true);
+  const fetchTasksData = async () => {
+    const updatedTasks = await fetchTasksForProject(projectId);
+    setTasks(updatedTasks || []);
+  };
 
   useEffect(() => {
     const getProjectData = async () => {
@@ -79,10 +83,11 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
           <TabsContent value="tasks" className="h-full">
             <TasksTable
               tasks={tasks}
+              setTasks={setTasks}
               projectId={projectId}
               orgId={project.organization_id}
               users={users}
-              fetchTasksData={() => {}}
+              fetchTasksData={fetchTasksData} 
             />
           </TabsContent>
         </div>

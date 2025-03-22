@@ -178,3 +178,20 @@ export const fetchUsersInProject = async (projectId: string) => {
         };
     });
 };
+
+export const fetchUserDetails = async (userId: string) => {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+        .from("users") 
+        .select("id, name")
+        .eq("id", userId)
+        .single();
+
+    if (error) {
+        console.error("❌ Error fetching user details:", error);
+        return null;
+    }
+
+    return data;
+};

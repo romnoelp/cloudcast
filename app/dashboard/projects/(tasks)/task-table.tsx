@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { fetchTasksForProject, fetchUsersInProject } from "../actions"; // Import server actions
+import { useState, useMemo } from "react";
 import {
   ColumnDef,
   SortingState,
@@ -77,34 +76,25 @@ const priorityIcons: Record<string, React.ReactNode> = {
 const TasksTable = ({
   projectId,
   orgId,
+  tasks,
+  users,
+  fetchTasksData,
 }: {
   projectId: string;
   orgId: string;
+  tasks: Task[];
+  setTasks: React.Dispatch<React.SetStateAction<Task[]>>; 
+  users: TaskCreateDialogProps["users"];
+  fetchTasksData: () => void;
 }) => {
+
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [users, setUsers] = useState<TaskCreateDialogProps["users"]>([]);
   const { user } = useUser();
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const fetchedTasks = await fetchTasksForProject(projectId);
-        setTasks(fetchedTasks);
-        const fetchedUsers = await fetchUsersInProject(projectId);
-        setUsers(fetchedUsers);
-      } catch (error) {
-        console.error("Failed to fetch data:", error);
-      }
-    };
-
-    fetchData();
-  }, [projectId]);
 
   const columns: ColumnDef<Task>[] = useMemo(
     () => [
@@ -302,17 +292,7 @@ const TasksTable = ({
         setIsDialogOpen={setIsDialogOpen}
         projectId={projectId}
         users={users}
-        fetchTasksData={() => {
-          const fetchData = async () => {
-            try {
-              const fetchedTasks = await fetchTasksForProject(projectId);
-              setTasks(fetchedTasks);
-            } catch (error) {
-              console.error("Failed to fetch data:", error);
-            }
-          };
-          fetchData();
-        }}
+        fetchTasksData={fetchTasksData} 
       />
       <InviteDialog
         isDialogOpen={isInviteDialogOpen}
