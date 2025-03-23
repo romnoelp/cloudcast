@@ -16,9 +16,9 @@ export const fetchUserRole = async (
 
   if (error) {
     console.error("❌ Error fetching role:", error);
-    return null; // ✅ Ensure it returns null instead of `{}`.
+    return null;
   }
 
   console.log("✅ User Role:", data?.role);
-  return data?.role || "Employee"; // ✅ Always return a string or null.
+  return data?.role || "Employee";
 };

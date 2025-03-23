@@ -6,7 +6,6 @@ import {
   SortingState,
   ColumnFiltersState,
   VisibilityState,
-  flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
@@ -15,84 +14,47 @@ import {
 } from "@tanstack/react-table";
 import {
   MoreHorizontal,
-  CheckCircle,
-  ChevronDown,
-  Clock,
+  Timer,
+  CircleHelp,
+  CircleOff,
+  CircleCheck,
   Circle,
-  Ban,
-  HelpCircle,
-  ArrowUp,
-  ArrowRight,
-  ArrowDown,
-  PlusCircle,
-  UserPlus,
-  Tag,
-  ListChecks,
-  Flag,
+  ClockAlert,
+  ClockArrowUp,
+  ClockArrowDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import {
-  TooltipProvider,
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
 import { Task, TaskCreateDialogProps } from "./task-type";
-import TaskCreateDialog from "./task-create-dialog";
-import InviteDialog from "../(invite-user)/invite-dialog";
-import { inviteUserToProject } from "../../users/actions";
 import { useUser } from "@/context/user-context";
 import {
   subscribeToTasks,
   unsubscribeFromTasks,
   RealtimeTaskPayload,
 } from "@/lib/supabase/client";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { deleteTask, updateTask } from "./actions";
+import { inviteUserToProject } from "../../users/actions";
 
-const statusIcons: Record<string, React.ReactNode> = {
-  "In Progress": <Clock className="h-4 w-4" />,
-  Done: <CheckCircle className="h-4 w-4" />,
-  Todo: <Circle className="h-4 w-4" />,
-  Backlog: <HelpCircle className="h-4 w-4" />,
-  Canceled: <Ban className="h-4 w-4" />,
-};
+import TaskFilter from "./task-filter";
+import CreateTaskTooltip from "./create-task-tooltip";
+import InviteUserTooltip from "./invite-user-tooltip";
+import TaskCreateDialog from "./task-create-dialog";
+import InviteDialog from "../(invite-user)/invite-dialog";
 
-const priorityIcons: Record<string, React.ReactNode> = {
-  High: <ArrowUp className="h-4 w-4" />,
-  Medium: <ArrowRight className="h-4 w-4" />,
-  Low: <ArrowDown className="h-4 w-4" />,
-};
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import EditTaskDialog from "./edit-task-dialog";
+import DeleteTaskDialog from "./delete-task-dialog";
+import TaskDrawer from "./task-drawer";
+import TaskArea from "./task-area";
 
 const TasksTable = ({
   projectId,
@@ -116,40 +78,51 @@ const TasksTable = ({
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
   const [editTask, setEditTask] = useState<Task | null>(null);
+  const [drawerTask, setDrawerTask] = useState<Task | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  const handleRowDoubleClick = (task: Task) => {
+    setDrawerTask(task);
+    setIsDrawerOpen(true);
+  };
   const { user } = useUser();
 
   const handleDeleteTask = useCallback(async () => {
     if (!deleteTaskId) return;
     try {
-      console.log("Deleting task:", deleteTaskId);
       await deleteTask(deleteTaskId, projectId);
       toast.success("Task deleted successfully.");
       fetchTasksData();
     } catch (error) {
-      console.error("Delete error:", error);
+      console.error("Error deleting task:", error);
       toast.error("Failed to delete task.");
     } finally {
       setDeleteTaskId(null);
     }
   }, [projectId, deleteTaskId, fetchTasksData]);
 
-  const handleUpdateTask = async () => {
-    if (!editTask?.id) {
-      console.error("Task ID is undefined.");
-      toast.error("Error: Task ID is missing.");
+  const handleUpdateTask = async (updatedTask: Task) => {
+    if (!updatedTask?.id) {
+      console.error("❌ Task ID is missing. Cannot update:", updatedTask);
+      toast.error("Task ID is missing. Cannot update.");
       return;
     }
 
     try {
-      console.log("Updating task:", editTask);
-      await updateTask(editTask.id, editTask);
+      console.log("🛠 Updating task in Supabase:", updatedTask);
+      await updateTask(updatedTask.id, updatedTask);
+
+      setTasksState((prevTasks) =>
+        prevTasks.map((task) =>
+          task.id === updatedTask.id ? { ...task, ...updatedTask } : task
+        )
+      );
+
       toast.success("Task updated successfully.");
-      fetchTasksData();
-    } catch (error) {
-      console.error("Update error:", error);
-      toast.error("Failed to update task.");
-    } finally {
       setEditTask(null);
+    } catch (error) {
+      console.error("Error updating task:", error);
+      toast.error("Failed to update task.");
     }
   };
 
@@ -159,17 +132,14 @@ const TasksTable = ({
         switch (payload.eventType) {
           case "INSERT":
             return [...prevTasks, payload.new as Task];
-
           case "UPDATE":
             return prevTasks.map((task) =>
               task.id === (payload.new as Task).id
                 ? (payload.new as Task)
                 : task
             );
-
           case "DELETE":
             return prevTasks.filter((task) => task.id !== payload.old?.id);
-
           default:
             return prevTasks;
         }
@@ -179,7 +149,6 @@ const TasksTable = ({
     };
 
     subscribeToTasks(projectId, handleTaskUpdate);
-
     return () => {
       unsubscribeFromTasks();
     };
@@ -231,32 +200,67 @@ const TasksTable = ({
       {
         accessorKey: "status",
         header: "Status",
-        cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            {statusIcons[row.original.status]}
-            {row.original.status}
-          </div>
-        ),
+        cell: ({ row }) => {
+          let icon;
+          switch (row.original.status) {
+            case "In Progress":
+              icon = <Timer className="w-4 h-4 mr-2 inline-block" />;
+              break;
+            case "Backlog":
+              icon = <CircleHelp className="w-4 h-4 mr-2 inline-block" />;
+              break;
+            case "Canceled":
+              icon = <CircleOff className="w-4 h-4 mr-2 inline-block" />;
+              break;
+            case "Done":
+              icon = <CircleCheck className="w-4 h-4 mr-2 inline-block" />;
+              break;
+            case "Todo":
+              icon = <Circle className="w-4 h-4 mr-2 inline-block" />;
+              break;
+            default:
+              icon = null;
+          }
+          return (
+            <div className="flex items-center">
+              {icon}
+              {row.original.status}
+            </div>
+          );
+        },
       },
       {
         accessorKey: "priority",
         header: "Priority",
-        cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            {priorityIcons[row.original.priority]}
-            {row.original.priority}
-          </div>
-        ),
+        cell: ({ row }) => {
+          let icon;
+          switch (row.original.priority) {
+            case "High":
+              icon = <ClockAlert className="w-4 h-4 mr-2 inline-block" />;
+              break;
+            case "Medium":
+              icon = <ClockArrowUp className="w-4 h-4 mr-2 inline-block" />;
+              break;
+            case "Low":
+              icon = <ClockArrowDown className="w-4 h-4 mr-2 inline-block" />;
+              break;
+            default:
+              icon = null;
+          }
+          return (
+            <div className="flex items-center">
+              {icon}
+              {row.original.priority}
+            </div>
+          );
+        },
       },
       {
         accessorKey: "assignee_id",
         header: "Assignee",
-        cell: ({ row }) => (
-          <span>
-            {users.find((u) => u.id === row.original.assignee_id)?.name ||
-              "Unknown"}
-          </span>
-        ),
+        cell: ({ row }) =>
+          users.find((u) => u.id === row.original.assignee_id)?.name ||
+          "Unknown",
       },
       {
         id: "actions",
@@ -268,30 +272,20 @@ const TasksTable = ({
                 <MoreHorizontal />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuContent
+              align="end"
+              className="w-40 bg-background border border-border"
+            >
+              <DropdownMenuLabel className="text-sm text-muted-foreground">
+                Actions
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => {
-                  if (row.original?.id) {
-                    setEditTask(row.original);
-                  } else {
-                    console.error("Task data is missing or undefined.");
-                    toast.error("Error: Could not load task data.");
-                  }
-                }}
-              >
+              <DropdownMenuItem onClick={() => setEditTask(row.original)}>
                 Edit
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => {
-                  if (row.original.id) {
-                    setDeleteTaskId(row.original.id);
-                  } else {
-                    console.error("Task ID is undefined.");
-                    toast.error("Error: Could not get task ID");
-                  }
-                }}
+                onClick={() => setDeleteTaskId(row.original.id ?? null)}
+                className="text-destructive-foreground"
               >
                 Delete
               </DropdownMenuItem>
@@ -319,88 +313,16 @@ const TasksTable = ({
 
   return (
     <div className="w-full h-full flex flex-col">
-      <div className="flex items-center justify-between py-4">
-        <div className="flex space-x-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="default" onClick={() => setIsDialogOpen(true)}>
-                  <PlusCircle className="h-4 w-4 mr-2" /> Create Task
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Create a new task in this project</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsInviteDialogOpen(true)}
-                >
-                  <UserPlus className="h-4 w-4 mr-2" /> Invite Users
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                Invite organization members to this project
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0 py-4">
+        <div className="flex flex-1 space-x-2">
+          <TaskFilter table={table} columns={columns} />
+          <CreateTaskTooltip setIsDialogOpen={setIsDialogOpen} />
         </div>
 
-        <Input
-          placeholder="Filter tasks..."
-          onChange={(event) => {
-            const value = event.target.value.toLowerCase();
-            table.setGlobalFilter(value);
-          }}
-          className="max-w-sm"
-        />
+        <div>
+          <InviteUserTooltip setIsInviteDialogOpen={setIsInviteDialogOpen} />
+        </div>
       </div>
-      <ScrollArea className="h-[550px] overflow-auto">
-        <Table className="w-full">
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.length > 0 ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="text-center py-4 text-gray-500"
-                >
-                  No tasks found. Create one to get started!
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </ScrollArea>
 
       <TaskCreateDialog
         isDialogOpen={isDialogOpen}
@@ -416,210 +338,31 @@ const TasksTable = ({
         projectId={projectId}
         orgId={orgId}
         inviteUserToProject={(data) =>
-          inviteUserToProject({
-            ...data,
-            senderId: user?.id || "",
-          })
+          inviteUserToProject({ ...data, senderId: user?.id || "" })
         }
       />
-      <AlertDialog
-        open={!!editTask}
-        onOpenChange={(open) => !open && setEditTask(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Edit Task</AlertDialogTitle>
-            <AlertDialogDescription>
-              Modify the task details and save changes.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+      <EditTaskDialog
+        editTask={editTask}
+        setEditTask={setEditTask}
+        handleUpdateTask={handleUpdateTask}
+      />
+      <DeleteTaskDialog
+        deleteTaskId={deleteTaskId}
+        setDeleteTaskId={setDeleteTaskId}
+        handleDeleteTask={handleDeleteTask}
+      />
 
-          {/* Title & Description */}
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-gray-300">Title</label>
-              <Input
-                value={editTask?.title || ""}
-                onChange={(e) =>
-                  setEditTask(
-                    (prev) => prev && { ...prev, title: e.target.value }
-                  )
-                }
-                placeholder="Task Title"
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-gray-300">
-                Description
-              </label>
-              <Input
-                value={editTask?.description || ""}
-                onChange={(e) =>
-                  setEditTask(
-                    (prev) => prev && { ...prev, description: e.target.value }
-                  )
-                }
-                placeholder="Task Description"
-              />
-            </div>
-
-            {/* Label & Status (Side by Side) */}
-            {/* Label, Status & Priority in One Line */}
-            <div className="flex gap-4">
-              {/* Label */}
-              <div className="flex flex-col flex-1">
-                <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                  <Tag className="h-4 w-4" /> Label
-                </label>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full flex items-center justify-between"
-                    >
-                      {editTask?.label || "Select Label"}
-                      <ChevronDown className="h-4 w-4 opacity-50" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    {["Feature", "Bug", "Improvement"].map((label) => (
-                      <DropdownMenuItem
-                        key={label}
-                        onSelect={() =>
-                          setEditTask(
-                            (prev) =>
-                              prev && {
-                                ...prev,
-                                label: label as
-                                  | "Feature"
-                                  | "Bug"
-                                  | "Improvement",
-                              }
-                          )
-                        }
-                      >
-                        {label}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
-              {/* Status */}
-              <div className="flex flex-col flex-1">
-                <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                  <ListChecks className="h-4 w-4" /> Status
-                </label>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full flex items-center justify-between"
-                    >
-                      {editTask?.status || "Select Status"}
-                      <ChevronDown className="h-4 w-4 opacity-50" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    {["Todo", "In Progress", "Done", "Backlog", "Canceled"].map(
-                      (status) => (
-                        <DropdownMenuItem
-                          key={status}
-                          onSelect={() =>
-                            setEditTask(
-                              (prev) =>
-                                prev && {
-                                  ...prev,
-                                  status: status as
-                                    | "Todo"
-                                    | "In Progress"
-                                    | "Done"
-                                    | "Backlog"
-                                    | "Canceled",
-                                }
-                            )
-                          }
-                        >
-                          {status}
-                        </DropdownMenuItem>
-                      )
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
-              <div className="flex flex-col flex-1">
-                <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                  <Flag className="h-4 w-4" /> Priority
-                </label>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full flex items-center justify-between"
-                    >
-                      {editTask?.priority || "Select Priority"}
-                      <ChevronDown className="h-4 w-4 opacity-50" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    {["Low", "Medium", "High"].map((priority) => (
-                      <DropdownMenuItem
-                        key={priority}
-                        onSelect={() =>
-                          setEditTask(
-                            (prev) =>
-                              prev && {
-                                ...prev,
-                                priority: priority as "High" | "Medium" | "Low",
-                              }
-                          )
-                        }
-                      >
-                        {priority}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-          </div>
-
-          {/* Buttons */}
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setEditTask(null)}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleUpdateTask}>
-              Save Changes
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog
-        open={!!deleteTaskId}
-        onOpenChange={(open) => !open && setDeleteTaskId(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the
-              task.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeleteTaskId(null)}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteTask}>
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <TaskArea
+        table={table}
+        columns={columns}
+        onRowDoubleClick={handleRowDoubleClick}
+      />
+      <TaskDrawer
+        task={drawerTask}
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        users={users} 
+      />
     </div>
   );
 };

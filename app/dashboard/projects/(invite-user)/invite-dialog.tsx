@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useUser } from "@/context/user-context"; // ✅ Import useUser
+import { useUser } from "@/context/user-context"; 
 import {
     Dialog,
     DialogContent,
@@ -14,18 +14,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { InviteDialogProps } from "./invite-type";
-import { fetchUsersNotInProject } from "../../users/actions"; // ✅ Import function
+import { fetchUsersNotInProject } from "../../users/actions"; 
 
 const ROLES = ["employee", "product-manager"] as const;
 
 export default function InviteDialog({ isDialogOpen, setIsDialogOpen, projectId, orgId, inviteUserToProject }: InviteDialogProps) {
-    const { user } = useUser(); // ✅ Get user context
+    const { user } = useUser(); 
     const [users, setUsers] = useState<{ id: string; name: string }[]>([]);
     const [loading, setLoading] = useState(false);
     const [selectedUser, setSelectedUser] = useState("");
     const [selectedRole, setSelectedRole] = useState<"employee" | "product-manager">("employee");
 
-    // ✅ Fetch users dynamically when the dialog opens
     useEffect(() => {
         if (isDialogOpen) {
             setLoading(true);
@@ -48,7 +47,7 @@ export default function InviteDialog({ isDialogOpen, setIsDialogOpen, projectId,
                 userId: selectedUser,
                 projectId,
                 role: selectedRole,
-                senderId: user?.id || "", // ✅ Fix: Use user from context
+                senderId: user?.id || "",
             });
             toast.success("User invited successfully!");
             setIsDialogOpen(false);
