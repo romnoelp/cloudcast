@@ -65,11 +65,12 @@ const ProjectTable = () => {
     setLoading(true);
     try {
       const fetchedProjects = await fetchProjects(selectedOrg.id);
-      
-      const filteredProjects = role === "admin"
-        ? fetchedProjects 
-        : fetchedProjects.filter(project => project.status !== "archived");
-  
+
+      const filteredProjects =
+        role === "admin"
+          ? fetchedProjects
+          : fetchedProjects.filter((project) => project.status !== "archived");
+
       setProjects(filteredProjects);
     } catch (error) {
       console.error("Fetch error:", error);
@@ -199,12 +200,12 @@ const ProjectTable = () => {
               >
                 Open
               </DropdownMenuItem>
-              {role === "admin" && ( 
+              {role === "admin" && (
                 <DropdownMenuItem onClick={handleStatusChange}>
                   {actionText}
                 </DropdownMenuItem>
               )}
-              {role === "admin" && ( 
+              {role === "admin" && (
                 <DropdownMenuItem
                   onClick={() => handleDeleteProjectAction(row.original.id)}
                 >
@@ -251,7 +252,7 @@ const ProjectTable = () => {
       ) : (
         <>
           <div className="flex items-center py-4">
-            {role === "admin" && ( 
+            {role === "admin" && (
               <Button className="mr-2" onClick={() => setIsDialogOpen(true)}>
                 Create Project
               </Button>
@@ -328,11 +329,17 @@ const ProjectTable = () => {
                     ))
                 ) : (
                   <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className="h-24 text-center"
-                    >
-                      No created projects.
+                    <TableCell colSpan={columns.length} className="h-24">
+                      <div className="flex flex-col items-center justify-center h-full text-center">
+                        <span className="text-muted-foreground">
+                          Check if there&apos;s a selected organization.
+                        </span>
+                        <span className="text-sm font-medium">
+                          {role === "admin"
+                            ? "No created projects."
+                            : "No active projects found."}
+                        </span>
+                      </div>
                     </TableCell>
                   </TableRow>
                 )}

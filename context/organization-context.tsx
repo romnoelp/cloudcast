@@ -10,9 +10,9 @@ import { useUser } from "@/context/user-context";
 
 const OrganizationContext = createContext<OrganizationContextType>({
   selectedOrg: null,
-  setSelectedOrg: () => { },
+  setSelectedOrg: () => {},
   organizations: [],
-  setOrganizations: () => { }, 
+  setOrganizations: () => {},
   loading: false,
 });
 
@@ -38,7 +38,9 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
       try {
         const { data, error: supabaseError } = await supabase
           .from("organization_members")
-          .select("organizations!inner(id, name, description, created_by, join_code)") 
+          .select(
+            "organizations!inner(id, name, description, created_by, join_code)"
+          )
           .eq("user_id", user.id);
 
         if (supabaseError) {
@@ -75,12 +77,19 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!storedOrg) return;
 
     try {
-      setSelectedOrg(JSON.parse(storedOrg));
+      const parsedOrg: Organization = JSON.parse(storedOrg);
+      setSelectedOrg((prev) => {
+        if (organizations.some((org) => org.id === parsedOrg.id)) {
+          return parsedOrg;
+        }
+        localStorage.removeItem("selectedOrg");
+        return prev; 
+      });
     } catch (e) {
       console.error("Error parsing selectedOrg from localStorage:", e);
       localStorage.removeItem("selectedOrg");
     }
-  }, []);
+  }, [organizations]); 
 
   useEffect(() => {
     if (selectedOrg) {
@@ -94,7 +103,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
     selectedOrg,
     setSelectedOrg,
     organizations,
-    setOrganizations, 
+    setOrganizations,
     loading,
   };
 

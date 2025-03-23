@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Task } from "./task-type";
+import { useUser } from "@/context/user-context"; // ✅ Import user context
 import { 
   AlertDialog, 
   AlertDialogContent, 
@@ -20,13 +21,15 @@ const EditTaskDialog = ({ editTask, setEditTask, handleUpdateTask }: {
   handleUpdateTask: (updatedTask: Task) => void;
 }) => {
   const [taskData, setTaskData] = useState<Task | null>(null);
+  const { user } = useUser(); // ✅ Get user role
+  const isEmployee = user?.role === "employee"; // ✅ Check if user is an employee
 
   useEffect(() => {
     setTaskData(editTask);
   }, [editTask]);
 
   const handleChange = (field: keyof Task, value: string) => {
-    setTaskData((prev) => prev ? { ...prev, [field]: value } : null);
+    setTaskData((prev) => (prev ? { ...prev, [field]: value } : null));
   };
 
   const saveChanges = async () => {
@@ -44,7 +47,10 @@ const EditTaskDialog = ({ editTask, setEditTask, handleUpdateTask }: {
         <AlertDialogHeader>
           <AlertDialogTitle className="text-lg font-semibold">Edit Task</AlertDialogTitle>
           <AlertDialogDescription className="text-sm text-muted-foreground">
-            Modify the task details below.
+            {isEmployee 
+              ? "As an employee, you can only update the task status."
+              : "Modify the task details below."
+            }
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -57,6 +63,7 @@ const EditTaskDialog = ({ editTask, setEditTask, handleUpdateTask }: {
               value={taskData?.title || ""}
               onChange={(e) => handleChange("title", e.target.value)}
               className="h-10 text-sm"
+              disabled={isEmployee} // ✅ Disable for employees
             />
           </div>
 
@@ -69,6 +76,7 @@ const EditTaskDialog = ({ editTask, setEditTask, handleUpdateTask }: {
               value={taskData?.description || ""}
               onChange={(e) => handleChange("description", e.target.value)}
               className="text-sm h-28 resize-none"
+              disabled={isEmployee} // ✅ Disable for employees
             />
           </div>
 
@@ -80,6 +88,7 @@ const EditTaskDialog = ({ editTask, setEditTask, handleUpdateTask }: {
               <Select
                 value={taskData?.label}
                 onValueChange={(value) => handleChange("label", value)}
+                disabled={isEmployee} // ✅ Disable for employees
               >
                 <SelectTrigger id="label" className="h-10 w-full text-sm">
                   <SelectValue placeholder="Label" />
@@ -92,7 +101,7 @@ const EditTaskDialog = ({ editTask, setEditTask, handleUpdateTask }: {
               </Select>
             </div>
 
-            {/* Status */}
+            {/* Status - ✅ Employees CAN edit */}
             <div className="space-y-1">
               <Label htmlFor="status" className="text-sm font-medium">Status</Label>
               <Select
@@ -118,6 +127,7 @@ const EditTaskDialog = ({ editTask, setEditTask, handleUpdateTask }: {
               <Select
                 value={taskData?.priority}
                 onValueChange={(value) => handleChange("priority", value)}
+                disabled={isEmployee} // ✅ Disable for employees
               >
                 <SelectTrigger id="priority" className="h-10 w-full text-sm">
                   <SelectValue placeholder="Priority" />
@@ -135,7 +145,11 @@ const EditTaskDialog = ({ editTask, setEditTask, handleUpdateTask }: {
         {/* Footer */}
         <AlertDialogFooter className="mt-5 flex justify-end space-x-3">
           <AlertDialogCancel className="h-10 px-4 text-sm">Cancel</AlertDialogCancel>
-          <AlertDialogAction className="h-10 px-6 text-sm bg-primary text-primary-foreground hover:bg-primary/90" onClick={saveChanges}>
+          <AlertDialogAction
+            className="h-10 px-6 text-sm bg-primary text-primary-foreground hover:bg-primary/90"
+            onClick={saveChanges}
+            disabled={isEmployee && editTask?.status === taskData?.status} // ✅ Prevent unnecessary updates
+          >
             Save
           </AlertDialogAction>
         </AlertDialogFooter>

@@ -95,7 +95,8 @@ const TeamSwitcher: React.FC = () => {
       const { data: updatedOrganizations, error: fetchError } = await supabase
         .from("organization_members")
         .select("organizations!inner(id, name, description, created_by, join_code)") 
-        .eq("user_id", user?.id);
+        .eq("user_id", user?.id)
+        .eq("status", "approved");
 
       if (fetchError) {
         throw fetchError;

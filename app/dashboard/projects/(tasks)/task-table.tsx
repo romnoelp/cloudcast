@@ -316,24 +316,34 @@ const TasksTable = ({
       <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0 py-4">
         <div className="flex flex-1 space-x-2">
           <TaskFilter table={table} columns={columns} />
-          <CreateTaskTooltip setIsDialogOpen={setIsDialogOpen} />
+          {/* 🔥 Hide "Create Task" button for employees */}
+          {user?.role !== "employee" && (
+            <CreateTaskTooltip setIsDialogOpen={setIsDialogOpen} />
+          )}
         </div>
-
-        <div>
+  
+        {/* 🔥 Hide "Invite Users" button for employees */}
+        {user?.role !== "employee" && (
           <InviteUserTooltip setIsInviteDialogOpen={setIsInviteDialogOpen} />
-        </div>
+        )}
       </div>
-
-      <TaskCreateDialog
-        isDialogOpen={isDialogOpen}
-        setIsDialogOpen={setIsDialogOpen}
-        projectId={projectId}
-        users={users}
-        fetchTasksData={fetchTasksData}
-      />
-      <InviteDialog
+  
+      {/* 🔥 Hide Task Creation Dialog for employees */}
+      {user?.role !== "employee" && (
+        <TaskCreateDialog
+          isDialogOpen={isDialogOpen}
+          setIsDialogOpen={setIsDialogOpen}
+          projectId={projectId}
+          users={users}
+          fetchTasksData={fetchTasksData}
+        />
+      )}
+  
+      {/* 🔥 Hide Invite Users Dialog for employees */}
+      {user?.role !== "employee" && (
+        <InviteDialog
         isDialogOpen={isInviteDialogOpen}
-        setIsDialogOpen={setIsInviteDialogOpen}
+        setIsDialogOpen={setIsInviteDialogOpen} // ✅ Change this to match InviteDialogProps
         users={users}
         projectId={projectId}
         orgId={orgId}
@@ -341,6 +351,8 @@ const TasksTable = ({
           inviteUserToProject({ ...data, senderId: user?.id || "" })
         }
       />
+      )}
+  
       <EditTaskDialog
         editTask={editTask}
         setEditTask={setEditTask}
@@ -351,7 +363,7 @@ const TasksTable = ({
         setDeleteTaskId={setDeleteTaskId}
         handleDeleteTask={handleDeleteTask}
       />
-
+  
       <TaskArea
         table={table}
         columns={columns}
@@ -365,6 +377,7 @@ const TasksTable = ({
       />
     </div>
   );
+  
 };
 
 export default TasksTable;
