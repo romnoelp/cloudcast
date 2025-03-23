@@ -128,26 +128,63 @@
 }
 
 .gradient-background {
+  position: relative;
+  overflow: hidden;
   background: linear-gradient(135deg, #3b82f6, #1e3a8a, #0f172a);
-  background-size: 200% 200%;
-  animation: swirly-water 12s infinite linear;
+  background-size: 300% 300%;
+  animation: smooth-gradient 10s infinite linear;
 }
 
-@keyframes swirly-water {
+.gradient-background::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 10%, transparent 60%);
+  mix-blend-mode: overlay;
+  animation: moving-light 8s infinite ease-in-out alternate;
+}
+
+.gradient-background::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.2) 10%, transparent 70%);
+  mix-blend-mode: multiply;
+  animation: moving-shadow 12s infinite ease-in-out alternate;
+}
+
+@keyframes smooth-gradient {
   0% {
-    background-position: 100% 50%;
-  }
-  25% {
-    background-position: 50% 0%;
+    background-position: 0% 50%;
   }
   50% {
-    background-position: 0% 100%;
-  }
-  75% {
-    background-position: 100% 100%;
+    background-position: 100% 50%;
   }
   100% {
-    background-position: 50% 0%;
+    background-position: 0% 50%;
   }
 }
 
+@keyframes moving-light {
+  0% {
+    transform: translate(-10%, -10%) scale(1);
+  }
+  50% {
+    transform: translate(20%, 30%) scale(1.2);
+  }
+  100% {
+    transform: translate(-10%, -10%) scale(1);
+  }
+}
+
+@keyframes moving-shadow {
+  0% {
+    transform: translate(10%, 10%) scale(1);
+  }
+  50% {
+    transform: translate(-20%, -30%) scale(1.1);
+  }
+  100% {
+    transform: translate(10%, 10%) scale(1);
+  }
+}
