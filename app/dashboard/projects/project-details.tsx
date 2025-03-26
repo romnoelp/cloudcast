@@ -13,6 +13,7 @@ import {
   fetchUsersInProject,
 } from "@/app/dashboard/projects/actions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import InboxPanel from "./(inbox)/inbox-panel";
 
 interface ProjectDetailsProps {
   projectId: string;
@@ -86,7 +87,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
       >
         <TabsList className="space-x-2">
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
-          <TabsTrigger value="inbox">Inbox</TabsTrigger>
+          <TabsTrigger value="messaging">Messaging</TabsTrigger>
           <TabsTrigger value="sent">Sent</TabsTrigger>
           <TabsTrigger value="trash">Trash</TabsTrigger>
         </TabsList>
@@ -100,6 +101,9 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
               users={users}
               fetchTasksData={fetchTasksData}
             />
+          </TabsContent>
+          <TabsContent value="messaging" className="flex flex-grow h-full">
+            <InboxPanel />
           </TabsContent>
         </div>
       </Tabs>
