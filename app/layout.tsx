@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { UserProvider } from "@/context/user-context";
 import { OrganizationProvider } from "@/context/organization-context";
+import { ProjectProvider } from "@/context/project-context";
 import { Toaster } from "sonner";
 
 const notoSans = Noto_Sans({
@@ -32,7 +33,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <UserProvider>
-            <OrganizationProvider>{children}</OrganizationProvider>
+            <OrganizationProvider>
+              <ProjectProvider>{children}</ProjectProvider>
+            </OrganizationProvider>
           </UserProvider>
           <Toaster />
         </ThemeProvider>

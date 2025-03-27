@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useOrganization } from "@/context/organization-context";
 import { Project } from "@/types/project";
+import { useProject } from "@/context/project-context";
 import {
   ColumnDef,
   SortingState,
@@ -84,13 +85,20 @@ const ProjectTable = () => {
     fetchProjectsData();
   }, [fetchProjectsData, role]);
 
+  const { setProject } = useProject(); // ⬅️ Get setProject from context
+
   const handleOpenProject = async (projectId: string) => {
-    const project = await fetchProjectDetails(projectId);
-    if (!project) {
-      toast.error("Project not found.");
-      return;
+    try {
+      const projectDetails = await fetchProjectDetails(projectId);
+      if (!projectDetails) {
+        toast.error("Project not found.");
+        return;
+      }
+      setProject(projectDetails);
+      setOpenedProjectId(projectId); // Fix UI update
+    } catch {
+      toast.error("Failed to load project details.");
     }
-    setOpenedProjectId(project.id);
   };
 
   const handleDeleteProjectAction = async (projectId: string) => {
