@@ -17,10 +17,12 @@ const UserSearch = ({ users, setSelectedMessage, projectId }: UserSearchProps) =
   const { user: currentUser } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [noResults, setNoResults] = useState(false);
 
   useEffect(() => {
     if (!searchQuery) {
       setFilteredUsers([]);
+      setNoResults(false);
       return;
     }
 
@@ -32,21 +34,22 @@ const UserSearch = ({ users, setSelectedMessage, projectId }: UserSearchProps) =
       .slice(0, 3);
 
     setFilteredUsers(filtered);
+    setNoResults(filtered.length === 0);
   }, [searchQuery, users]);
 
   const handleSelectUser = async (selectedUser: User) => {
     if (!selectedUser || !currentUser) return;
-  
+
     setSearchQuery(selectedUser.name);
     const conversationId = await startConversation(currentUser.id, selectedUser.id, projectId);
-  
+
     if (conversationId) {
       setSelectedMessage(conversationId);
+      setSearchQuery(""); // Clear search after selection
     } else {
       console.error("❌ Failed to start conversation");
     }
   };
-  
 
   return (
     <div className="relative">
@@ -59,6 +62,10 @@ const UserSearch = ({ users, setSelectedMessage, projectId }: UserSearchProps) =
 
       {searchQuery && filteredUsers.length > 0 && (
         <UserList users={filteredUsers} onSelectUser={handleSelectUser} />
+      )}
+
+      {searchQuery && noResults && (
+        <div className="text-muted-foreground text-center p-2">No users found</div>
       )}
     </div>
   );

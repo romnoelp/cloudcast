@@ -13,20 +13,46 @@ const Sidebar = ({ setSelectedMessage, isMinimized }: SidebarProps) => {
   const { user } = useUser();
   const supabase = createClient();
 
+  // ✅ Ensure conversations & users are arrays
+  type RawConversation = {
+    conversation_id: string;
+    conversations: {
+      id: string;
+      type: "dm" | "group";
+      name: string | null;
+    }; // ✅ Change to an object (remove [])
+    users: { id: string; name: string; avatar_url: string | null }[]; // ✅ Keep as an array
+  };
+
   useEffect(() => {
     if (!user) return;
 
     const fetchConversations = async () => {
+      const { data: conversationIds, error: idError } = await supabase
+        .from("conversation_members")
+        .select("conversation_id")
+        .eq("user_id", user.id);
+
+      if (idError) {
+        console.error("❌ Error fetching conversation IDs:", idError);
+        return;
+      }
+
+      const conversationIdList = conversationIds.map((c) => c.conversation_id);
+      if (conversationIdList.length === 0) {
+        console.warn("⚠️ No conversations found for this user.");
+        setConversations([]);
+        return;
+      }
+
       const { data, error } = await supabase
         .from("conversation_members")
-        .select(
-          `
+        .select(`
           conversation_id, 
           conversations!inner(id, type, name), 
-          users!inner(id, name, avatar_url) -- ✅ Fetch avatar_url
-        `
-        )
-        .eq("user_id", user.id);
+          users!inner(id, name, avatar_url)
+        `)
+        .in("conversation_id", conversationIdList);
 
       if (error) {
         console.error("❌ Error fetching conversations:", error);
@@ -35,55 +61,81 @@ const Sidebar = ({ setSelectedMessage, isMinimized }: SidebarProps) => {
 
       console.log("Fetched Conversations Data:", data);
 
-      type RawConversation = {
-        conversation_id: string;
-        conversations: {
+      const conversationMap = new Map<
+        string,
+        {
           id: string;
           type: "dm" | "group";
-          name: string | null;
-        };
-        users: { id: string; name: string; avatar_url: string | null };
-      };
+          name: string;
+          avatar: string;
+          users: { id: string; name: string; avatar_url: string | null }[];
+        }
+      >();
 
-      const processedConversations: Conversation[] = (
-        data as unknown as RawConversation[]
-      )
-        .map((row) => {
-          console.log("🔍 Processing row:", row);
+      // ✅ Convert `data` to `unknown` first
+      const rawData = data as unknown;
+      const conversationData = rawData as RawConversation[];
 
-          const conversation = row.conversations;
-          if (!conversation) {
-            console.warn("⚠️ Skipping row due to missing conversation:", row);
-            return null;
-          }
+      conversationData.forEach((row) => {
+        const conversationId = row.conversation_id;
 
-          let displayName = conversation.name?.trim() || "Unnamed Chat";
-          let avatarUrl = row.users.avatar_url || "";
+        // ✅ Extract the first element from arrays
+        const conversation = row.conversations; // ✅ Directly access object
 
-          if (conversation.type === "dm") {
-            if (row.users.id !== user.id) {
-              displayName = row.users.name;
-              avatarUrl = row.users.avatar_url || "";
-            } else {
-              displayName = user.name;
-              avatarUrl = user.avatar_url || "";
-            }
-          }
+        const usersArray = Array.isArray(row.users) ? row.users : [row.users]; 
+        const userInfo = usersArray.find((u) => u.id !== user.id); // ✅ Correct
 
-          console.log(
-            `👤 Processed Conversation - Name: ${displayName}, Avatar: ${avatarUrl}`
-          );
+        if (!conversation) {
+          console.warn("⚠️ Skipping row due to missing conversation:", row);
+          return;
+        }
 
-          return {
+        if (!conversationMap.has(conversationId)) {
+          conversationMap.set(conversationId, {
             id: conversation.id,
             type: conversation.type,
-            name: displayName,
-            avatar: avatarUrl,
-          };
-        })
-        .filter((conv): conv is Conversation => conv !== null);
+            name: "Unnamed Chat",
+            avatar: "",
+            users: [],
+          });
+        }
 
-      console.log("Processed Conversations:", processedConversations);
+        const conv = conversationMap.get(conversationId)!;
+        if (userInfo && !conv.users.some((u) => u.id === userInfo.id)) {
+          conv.users.push(userInfo);
+        }
+      });
+
+      const processedConversations: Conversation[] = Array.from(
+        conversationMap.values()
+      ).map((conv) => {
+        let displayName = conv.name;
+        let avatarUrl = "";
+      
+        if (conv.type === "dm") {
+          // ✅ Use `conv.users`, NOT `row.users`
+          const usersArray = Array.isArray(conv.users) ? conv.users : [conv.users];
+          const recipient = usersArray.find((u) => u.id !== user.id) || null;
+      
+          if (recipient) {
+            displayName = recipient.name;
+            avatarUrl = recipient.avatar_url || "";
+          }
+        }
+      
+        console.log(`👤 Processed Conversation - Name: ${displayName}, Avatar: ${avatarUrl}`);
+      
+        return {
+          id: conv.id,
+          type: conv.type,
+          name: displayName,
+          avatar: avatarUrl,
+        };
+      });
+      
+      
+
+      console.log("✅ Final Processed Conversations:", processedConversations);
       setConversations(processedConversations);
     };
 
@@ -101,11 +153,7 @@ const Sidebar = ({ setSelectedMessage, isMinimized }: SidebarProps) => {
                 className="w-12 h-12 cursor-pointer"
                 onClick={() => setSelectedMessage(conversation.id)}
               >
-                <AvatarImage
-                  src={conversation.avatar}
-                  alt={conversation.name}
-                />
-
+                <AvatarImage src={conversation.avatar} alt={conversation.name} />
                 <AvatarFallback>
                   {conversation.name?.charAt(0).toUpperCase() || "?"}
                 </AvatarFallback>
@@ -118,10 +166,7 @@ const Sidebar = ({ setSelectedMessage, isMinimized }: SidebarProps) => {
               >
                 <CardContent className="flex items-center gap-3 p-3">
                   <Avatar className="w-12 h-12">
-                    <AvatarImage
-                      src={conversation.avatar}
-                      alt={conversation.name}
-                    />
+                    <AvatarImage src={conversation.avatar} alt={conversation.name} />
                     <AvatarFallback>
                       {conversation.name?.charAt(0).toUpperCase() || "?"}
                     </AvatarFallback>
@@ -137,9 +182,7 @@ const Sidebar = ({ setSelectedMessage, isMinimized }: SidebarProps) => {
             )
           )
         ) : (
-          <p className="text-muted-foreground text-center">
-            No conversations found.
-          </p>
+          <p className="text-muted-foreground text-center">No conversations found.</p>
         )}
       </div>
     </ScrollArea>

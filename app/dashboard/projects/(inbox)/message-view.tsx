@@ -17,6 +17,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import UserSearch from "./user-search";
 import Image from "next/image";
+import ChatInput from "./chat-input"; // ✅ Import ChatInput
+import { Input } from "@/components/ui/input";
 
 const MessageView = ({
   selectedMessage,
@@ -91,11 +93,18 @@ const MessageView = ({
   };
 
   return (
-    <div className="flex h-full flex-col items-center justify-center">
+    <div className="flex h-full flex-col items-center justify-center w-full">
       {selectedMessage ? (
         <>
-          <ScrollArea className="flex-grow w-full rounded-md overflow-auto"></ScrollArea>
-          <div className="border-t bg-background p-2 w-full"></div>
+          {/* ✅ Message Display Area */}
+          <ScrollArea className="flex-grow w-full rounded-md overflow-auto">
+            {/* Messages will be displayed here */}
+          </ScrollArea>
+
+          {/* ✅ Chat Input - Added to selected message view */}
+          <div className="border-t bg-background p-2 w-full">
+            <ChatInput />
+          </div>
         </>
       ) : (
         <div className="flex flex-col items-center justify-center text-center gap-4">
@@ -128,7 +137,7 @@ const MessageView = ({
                   <DialogTitle>Create a Group Chat</DialogTitle>
                 </DialogHeader>
 
-                <input
+                <Input
                   type="text"
                   placeholder="Group Name"
                   value={groupName}
