@@ -13,15 +13,14 @@ const Sidebar = ({ setSelectedMessage, isMinimized }: SidebarProps) => {
   const { user } = useUser();
   const supabase = createClient();
 
-  // ✅ Ensure conversations & users are arrays
   type RawConversation = {
     conversation_id: string;
     conversations: {
       id: string;
       type: "dm" | "group";
       name: string | null;
-    }; // ✅ Change to an object (remove [])
-    users: { id: string; name: string; avatar_url: string | null }[]; // ✅ Keep as an array
+    }; 
+    users: { id: string; name: string; avatar_url: string | null }[];
   };
 
   useEffect(() => {
@@ -72,18 +71,16 @@ const Sidebar = ({ setSelectedMessage, isMinimized }: SidebarProps) => {
         }
       >();
 
-      // ✅ Convert `data` to `unknown` first
       const rawData = data as unknown;
       const conversationData = rawData as RawConversation[];
 
       conversationData.forEach((row) => {
         const conversationId = row.conversation_id;
 
-        // ✅ Extract the first element from arrays
-        const conversation = row.conversations; // ✅ Directly access object
+        const conversation = row.conversations; 
 
         const usersArray = Array.isArray(row.users) ? row.users : [row.users]; 
-        const userInfo = usersArray.find((u) => u.id !== user.id); // ✅ Correct
+        const userInfo = usersArray.find((u) => u.id !== user.id); 
 
         if (!conversation) {
           console.warn("⚠️ Skipping row due to missing conversation:", row);
@@ -113,7 +110,6 @@ const Sidebar = ({ setSelectedMessage, isMinimized }: SidebarProps) => {
         let avatarUrl = "";
       
         if (conv.type === "dm") {
-          // ✅ Use `conv.users`, NOT `row.users`
           const usersArray = Array.isArray(conv.users) ? conv.users : [conv.users];
           const recipient = usersArray.find((u) => u.id !== user.id) || null;
       

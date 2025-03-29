@@ -13,7 +13,7 @@ export const fetchProjectMembers = async (projectId: string) => {
 
   const { data, error } = await supabase
     .from("project_members")
-    .select("user_id, users!inner(id, name, avatar_url)")
+    .select("user_id, users!inner(id, name, email, role, avatar_url)")
     .eq("project_id", projectId);
 
   if (error) {
@@ -28,10 +28,13 @@ export const fetchProjectMembers = async (projectId: string) => {
     return {
       id: user?.id || user_id,
       name: user?.name || "Unknown",
-      avatar: user?.avatar_url || "",
+      email: user?.email || "No email",
+      role: user?.role || "employee",
+      avatar_url: user?.avatar_url || "/default-avatar.png",
     };
   });
 };
+
 
 export const startConversation = async (
   userId: string,
@@ -106,3 +109,68 @@ export const startConversation = async (
   console.log("✅ New conversation started:", newConversation.id);
   return newConversation.id;
 };
+
+export const fetchMessages = async (conversationId: string) => {
+  const supabase = await createClient();
+
+  if (!conversationId) {
+    console.error("❌ Conversation ID is required");
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("messages")
+    .select("id, sender_id, content, created_at, users!inner(id, name, avatar_url)")
+    .eq("conversation_id", conversationId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("❌ Error fetching messages:", error);
+    return [];
+  }
+
+  return data.map((msg) => {
+    const user = Array.isArray(msg.users) ? msg.users[0] : msg.users;
+
+    return {
+      id: msg.id,
+      sender_id: msg.sender_id,
+      content: msg.content,
+      created_at: msg.created_at,
+      sender: {
+        id: user?.id || "unknown",
+        name: user?.name || "Unknown",
+        avatar_url: user?.avatar_url || "/default-avatar.png",
+      },
+    };
+  });
+};
+
+
+export const sendMessage = async (
+  conversationId: string,
+  senderId: string,
+  content: string
+) => {
+  const supabase = await createClient();
+
+  if (!content.trim()) {
+    console.error("❌ Message content is empty.");
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("messages")
+    .insert([{ conversation_id: conversationId, sender_id: senderId, content }])
+    .select()
+    .single();
+
+  if (error) {
+    console.error("❌ Error sending message:", error);
+    return null;
+  }
+
+  console.log("✅ Message sent:", data);
+  return data;
+};
+

@@ -25,3 +25,14 @@ export type User = {
   role: string;
 };
 
+export type Message = {
+  id: string;
+  sender_id: string;
+  content: string;
+  created_at: string;
+  sender?: {
+    id: string;
+    name: string;
+    avatar_url?: string;
+  };
+};

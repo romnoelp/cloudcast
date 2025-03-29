@@ -4,20 +4,29 @@ import { useState } from "react";
 import { Paperclip, ThumbsUp, Send } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import FileUploadDialog from "./file-upload-dialog"; 
+import FileUploadDialog from "./file-upload-dialog";
+import { sendMessage } from "./actions";
+import { useUser } from "@/context/user-context"; 
 
-const ChatInput = () => {
+type ChatInputProps = {
+  conversationId: string;
+};
+
+const ChatInput = ({ conversationId }: ChatInputProps) => {
   const [message, setMessage] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const { user } = useUser();
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!message.trim() && !file) return;
+    if (!user) return console.error("❌ No user found");
 
-    console.log("Sending message:", message, file);
-
-    setMessage("");
-    setFile(null);
+    const newMessage = await sendMessage(conversationId, user.id, message);
+    if (newMessage) {
+      setMessage("");
+      setFile(null);
+    }
   };
 
   return (
@@ -33,7 +42,7 @@ const ChatInput = () => {
       />
 
       <Input
-        className="flex-grow h-12 border border-border focus:border-primary focus:ring-0 focus-visible:ring-0"
+        className="flex-grow h-12 border border-border focus:border-primary focus:ring-0"
         placeholder="Type a message..."
         value={message}
         onChange={(e) => setMessage(e.target.value)}

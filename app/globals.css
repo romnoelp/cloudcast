@@ -4,6 +4,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
