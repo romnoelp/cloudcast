@@ -6,10 +6,9 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { useState } from "react";
-import { useProject } from "@/context/project-context"; 
+import { useProject } from "@/context/project-context";
 import Sidebar from "./sidebar";
-import MessageView from "./message-view"; 
-
+import MessageView from "./message-view";
 
 const InboxPanel = () => {
   const { project } = useProject();
@@ -37,12 +36,11 @@ const InboxPanel = () => {
       <ResizableHandle withHandle />
 
       <ResizablePanel defaultSize={80} minSize={70}>
-      <MessageView 
-  selectedMessage={selectedMessage} 
-  setSelectedMessage={setSelectedMessage} 
-  projectId={project?.id ?? ""} 
-/>
-
+        <MessageView
+          selectedMessage={selectedMessage}
+          setSelectedMessage={setSelectedMessage}
+          projectId={project?.id ?? ""}
+        />
       </ResizablePanel>
     </ResizablePanelGroup>
   );

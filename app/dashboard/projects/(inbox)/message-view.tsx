@@ -3,13 +3,14 @@
 import { useState, useEffect, useRef } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { createClient } from "@/lib/supabase/client";
-import { MessageViewProps, Message, User } from "./inbox-type"; 
+import { MessageViewProps, Message, User } from "./inbox-type";
 import ChatInput from "./chat-input";
 import StartDirectMessageDialog from "./(dialog)/start-message-dialog";
 import CreateGroupChatDialog from "./(dialog)/create-group-chat-dialog";
-import { fetchMessages, fetchProjectMembers } from "./actions"; 
+import { fetchMessages, fetchProjectMembers } from "./actions";
 import Image from "next/image";
-import { useUser } from "@/context/user-context"; 
+import { useUser } from "@/context/user-context";
+import { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
 const MessageView = ({
   selectedMessage,
@@ -44,47 +45,73 @@ const MessageView = ({
   }, [selectedMessage]);
 
   useEffect(() => {
-    if (!selectedMessage) return;
-  
+    if (!selectedMessage) {
+      console.log("MessageView: selectedMessage is null or undefined.");
+      return;
+    }
+
+    console.log(
+      "MessageView: Subscribing to channel:",
+      `conversation-${selectedMessage}`
+    );
+
     const handleNewMessage = async (newMessage: Omit<Message, "sender">) => {
-      const { data: sender } = await supabase
-        .from("users")
-        .select("id, name, avatar_url")
-        .eq("id", newMessage.sender_id)
-        .single();
-    
-      setMessages((prev) => [
-        ...prev,
-        {
-          ...newMessage,
-          sender: sender
-            ? {
-                id: sender.id,
-                name: sender.name,
-                avatar_url: sender.avatar_url || "/default-avatar.png",
-              }
-            : undefined, 
-        },
-      ]);
+      console.log("MessageView: New message received:", newMessage);
+
+      try {
+        const { data: sender } = await supabase
+          .from("users")
+          .select("id, name, avatar_url")
+          .eq("id", newMessage.sender_id)
+          .single();
+
+        setMessages((prev) => {
+          if (newMessage.conversation_id !== selectedMessage) return prev;
+          return [
+            ...prev,
+            {
+              ...newMessage,
+              sender: sender
+                ? {
+                    id: sender.id,
+                    name: sender.name,
+                    avatar_url: sender.avatar_url || "/default-avatar.png",
+                  }
+                : undefined,
+            },
+          ];
+        });
+      } catch (error) {
+        console.error("Error fetching sender:", error);
+      }
     };
-    
-  
-    const channel = supabase
-      .channel(`conversation-${selectedMessage}`)
+
+    const channel = supabase.channel(`conversation-${selectedMessage}`);
+
+    channel
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages" },
-        (payload) => {
-          handleNewMessage({
-            id: payload.new.id,
-            sender_id: payload.new.sender_id,
-            content: payload.new.content,
-            created_at: payload.new.created_at,
-          });
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${selectedMessage}`,
+        },
+        (payload: RealtimePostgresChangesPayload<Message>) => {
+          if (payload.new) {
+            const newMessage = payload.new as Message; // Type assertion
+            handleNewMessage({
+              id: newMessage.id,
+              sender_id: newMessage.sender_id,
+              content: newMessage.content,
+              created_at: newMessage.created_at,
+              conversation_id: newMessage.conversation_id,
+            });
+          }
         }
       )
       .subscribe();
-  
+
     return () => {
       supabase.removeChannel(channel);
     };
@@ -154,14 +181,14 @@ const MessageView = ({
               onOpenChange={setIsDialogOpen}
               setSelectedMessage={setSelectedMessage}
               projectId={projectId}
-              projectMembers={projectMembers} 
+              projectMembers={projectMembers}
             />
 
             <CreateGroupChatDialog
               open={isGroupChatOpen}
               onOpenChange={setIsGroupChatOpen}
               projectId={projectId}
-              projectMembers={projectMembers} 
+              projectMembers={projectMembers}
             />
           </div>
         </div>

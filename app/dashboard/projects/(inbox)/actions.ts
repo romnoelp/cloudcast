@@ -21,7 +21,6 @@ export const fetchProjectMembers = async (projectId: string) => {
     return [];
   }
 
-  console.log("✅ Project Members (raw response):", data);
 
   return data.map(({ users, user_id }) => {
     const user = Array.isArray(users) ? users[0] : users; 
@@ -113,38 +112,24 @@ export const startConversation = async (
 export const fetchMessages = async (conversationId: string) => {
   const supabase = await createClient();
 
-  if (!conversationId) {
-    console.error("❌ Conversation ID is required");
-    return [];
-  }
-
   const { data, error } = await supabase
     .from("messages")
-    .select("id, sender_id, content, created_at, users!inner(id, name, avatar_url)")
+    .select("id, sender_id, content, created_at, conversation_id, sender:users(id, name, avatar_url)")
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: true });
 
   if (error) {
-    console.error("❌ Error fetching messages:", error);
+    console.error("Error fetching messages:", error);
     return [];
   }
 
-  return data.map((msg) => {
-    const user = Array.isArray(msg.users) ? msg.users[0] : msg.users;
-
-    return {
-      id: msg.id,
-      sender_id: msg.sender_id,
-      content: msg.content,
-      created_at: msg.created_at,
-      sender: {
-        id: user?.id || "unknown",
-        name: user?.name || "Unknown",
-        avatar_url: user?.avatar_url || "/default-avatar.png",
-      },
-    };
-  });
+  return data.map((message) => ({
+    ...message,
+    sender: Array.isArray(message.sender) ? message.sender[0] : message.sender, // Ensure sender is a single object
+  }));
 };
+
+
 
 
 export const sendMessage = async (

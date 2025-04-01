@@ -79,7 +79,6 @@ export const fetchUsersNotInProject = async (
 
   if (!projectMembers) return [];
 
-  console.log("✅ Project members:", projectMembers);
 
   const projectUserIds = new Set(projectMembers.map(({ user_id }) => user_id));
 
