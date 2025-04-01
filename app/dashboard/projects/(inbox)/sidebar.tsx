@@ -2,13 +2,27 @@
 
 import { useEffect, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
-import { SidebarProps, Conversation } from "./inbox-type";
+import { Conversation, User } from "./inbox-type";
 import { useUser } from "@/context/user-context";
+import ConversationList from "./conversation-list";
+import SidebarActions from "./sidebar-actions";
 
-const Sidebar = ({ setSelectedMessage, isMinimized }: SidebarProps) => {
+interface SidebarProps {
+  setSelectedMessage: (conversationId: string | null) => void;
+  isMinimized: boolean;
+  selectedMessage: string | null;
+  projectId: string;
+  projectMembers: User[];
+}
+
+const Sidebar = ({
+  setSelectedMessage,
+  isMinimized,
+  selectedMessage,
+  projectId,
+  projectMembers,
+}: SidebarProps) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const { user } = useUser();
   const supabase = createClient();
@@ -19,7 +33,7 @@ const Sidebar = ({ setSelectedMessage, isMinimized }: SidebarProps) => {
       id: string;
       type: "dm" | "group";
       name: string | null;
-    }; 
+    };
     users: { id: string; name: string; avatar_url: string | null }[];
   };
 
@@ -77,10 +91,10 @@ const Sidebar = ({ setSelectedMessage, isMinimized }: SidebarProps) => {
       conversationData.forEach((row) => {
         const conversationId = row.conversation_id;
 
-        const conversation = row.conversations; 
+        const conversation = row.conversations;
 
-        const usersArray = Array.isArray(row.users) ? row.users : [row.users]; 
-        const userInfo = usersArray.find((u) => u.id !== user.id); 
+        const usersArray = Array.isArray(row.users) ? row.users : [row.users];
+        const userInfo = usersArray.find((u) => u.id !== user.id);
 
         if (!conversation) {
           console.warn("⚠️ Skipping row due to missing conversation:", row);
@@ -108,19 +122,19 @@ const Sidebar = ({ setSelectedMessage, isMinimized }: SidebarProps) => {
       ).map((conv) => {
         let displayName = conv.name;
         let avatarUrl = "";
-      
+
         if (conv.type === "dm") {
           const usersArray = Array.isArray(conv.users) ? conv.users : [conv.users];
           const recipient = usersArray.find((u) => u.id !== user.id) || null;
-      
+
           if (recipient) {
             displayName = recipient.name;
             avatarUrl = recipient.avatar_url || "";
           }
         }
-      
+
         console.log(`👤 Processed Conversation - Name: ${displayName}, Avatar: ${avatarUrl}`);
-      
+
         return {
           id: conv.id,
           type: conv.type,
@@ -128,8 +142,6 @@ const Sidebar = ({ setSelectedMessage, isMinimized }: SidebarProps) => {
           avatar: avatarUrl,
         };
       });
-      
-      
 
       console.log("✅ Final Processed Conversations:", processedConversations);
       setConversations(processedConversations);
@@ -139,49 +151,23 @@ const Sidebar = ({ setSelectedMessage, isMinimized }: SidebarProps) => {
   }, [user, supabase]);
 
   return (
-    <ScrollArea className="h-full w-full p-3">
-      <div className="flex flex-col gap-2">
-        {conversations.length > 0 ? (
-          conversations.map((conversation) =>
-            isMinimized ? (
-              <Avatar
-                key={conversation.id}
-                className="w-12 h-12 cursor-pointer"
-                onClick={() => setSelectedMessage(conversation.id)}
-              >
-                <AvatarImage src={conversation.avatar} alt={conversation.name} />
-                <AvatarFallback>
-                  {conversation.name?.charAt(0).toUpperCase() || "?"}
-                </AvatarFallback>
-              </Avatar>
-            ) : (
-              <Card
-                key={conversation.id}
-                className="cursor-pointer transition-all hover:bg-accent/30 p-3 rounded-lg"
-                onClick={() => setSelectedMessage(conversation.id)}
-              >
-                <CardContent className="flex items-center gap-3 p-3">
-                  <Avatar className="w-12 h-12">
-                    <AvatarImage src={conversation.avatar} alt={conversation.name} />
-                    <AvatarFallback>
-                      {conversation.name?.charAt(0).toUpperCase() || "?"}
-                    </AvatarFallback>
-                  </Avatar>
-
-                  <div className="flex flex-col flex-grow overflow-hidden">
-                    <p className="text-sm font-semibold text-foreground">
-                      {conversation.name}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          )
-        ) : (
-          <p className="text-muted-foreground text-center">No conversations found.</p>
-        )}
-      </div>
-    </ScrollArea>
+    <div className="h-full w-full p-3 flex flex-col">
+      <ScrollArea className="flex-grow">
+        <ConversationList
+          conversations={conversations}
+          setSelectedMessage={setSelectedMessage}
+          selectedMessage={selectedMessage}
+          isMinimized={isMinimized}
+        />
+      </ScrollArea>
+      {selectedMessage !== null && (
+        <SidebarActions
+          projectId={projectId}
+          projectMembers={projectMembers}
+          setSelectedMessage={setSelectedMessage}
+        />
+      )}
+    </div>
   );
 };
 

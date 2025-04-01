@@ -5,15 +5,28 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import { useState } from "react";
+import { useState, useEffect } from "react"; // Import useEffect
 import { useProject } from "@/context/project-context";
 import Sidebar from "./sidebar";
 import MessageView from "./message-view";
+import { fetchProjectMembers } from "./actions"; // Import fetchProjectMembers and User
+import { User } from "./inbox-type";
 
 const InboxPanel = () => {
   const { project } = useProject();
   const [isMinimized, setIsMinimized] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<string | null>(null);
+  const [projectMembers, setProjectMembers] = useState<User[]>([]); // State for project members
+
+  useEffect(() => {
+    if (project?.id) {
+      const loadMembers = async () => {
+        const members = await fetchProjectMembers(project.id);
+        setProjectMembers(members);
+      };
+      loadMembers();
+    }
+  }, [project?.id]);
 
   return (
     <ResizablePanelGroup
@@ -30,6 +43,8 @@ const InboxPanel = () => {
           isMinimized={isMinimized}
           setSelectedMessage={setSelectedMessage}
           selectedMessage={selectedMessage}
+          projectId={project?.id ?? ""} // Pass projectId
+          projectMembers={projectMembers} // Pass projectMembers
         />
       </ResizablePanel>
 
