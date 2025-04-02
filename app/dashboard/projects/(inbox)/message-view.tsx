@@ -11,6 +11,7 @@ import { fetchMessages, fetchProjectMembers } from "./actions";
 import Image from "next/image";
 import { useUser } from "@/context/user-context";
 import { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const MessageView = ({
   selectedMessage,
@@ -99,7 +100,7 @@ const MessageView = ({
         },
         (payload: RealtimePostgresChangesPayload<Message>) => {
           if (payload.new) {
-            const newMessage = payload.new as Message; // Type assertion
+            const newMessage = payload.new as Message;
             handleNewMessage({
               id: newMessage.id,
               sender_id: newMessage.sender_id,
@@ -146,15 +147,34 @@ const MessageView = ({
                     />
                   )}
 
-                  <div
-                    className={`px-4 py-2 rounded-lg max-w-xs ${
-                      msg.sender_id === user?.id
-                        ? "bg-primary text-white self-end"
-                        : "bg-gray-200 text-black self-start"
-                    }`}
-                  >
-                    <p className="text-sm">{msg.content}</p>
-                  </div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div
+                          className={`px-4 py-2 rounded-lg max-w-xs cursor-pointer ${
+                            msg.sender_id === user?.id
+                              ? "bg-primary text-white self-end"
+                              : "bg-gray-200 text-black self-start"
+                          }`}
+                        >
+                          <p className="text-sm">{msg.content}</p>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>
+                          {new Date(msg.created_at).toLocaleString("en-US", {
+                            weekday: "short",
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            second: "2-digit",
+                          })}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
 
                   <div ref={scrollRef}></div>
                 </div>

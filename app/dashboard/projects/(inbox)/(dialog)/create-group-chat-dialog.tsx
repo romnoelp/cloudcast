@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Label } from "@/components/ui/label";
@@ -11,6 +17,7 @@ import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
 import { User } from "../inbox-type";
+import { createGroupChat } from "../actions";
 
 type CreateGroupChatDialogProps = {
   open: boolean;
@@ -19,14 +26,21 @@ type CreateGroupChatDialogProps = {
   projectId: string;
 };
 
-const CreateGroupChatDialog = ({ open, onOpenChange, projectMembers, projectId }: CreateGroupChatDialogProps) => {
+const CreateGroupChatDialog = ({
+  open,
+  onOpenChange,
+  projectMembers,
+  projectId,
+}: CreateGroupChatDialogProps) => {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [groupName, setGroupName] = useState("");
   const [loading, setLoading] = useState(false);
 
   const toggleUserSelection = (userId: string) => {
     setSelectedUsers((prev) =>
-      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+      prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
+        : [...prev, userId]
     );
   };
 
@@ -35,25 +49,34 @@ const CreateGroupChatDialog = ({ open, onOpenChange, projectMembers, projectId }
       toast.error("Group must have a name and at least 2 members.");
       return;
     }
-
+  
     setLoading(true);
     const supabase = createClient();
-
-    const { error } = await supabase.from("group_chats").insert([
-      { name: groupName, project_id: projectId, members: JSON.stringify(selectedUsers) },
-    ]);
-
+  
+    const { data: authUser, error: authError } = await supabase.auth.getUser();
+  
+    if (authError || !authUser?.user) {
+      toast.error("Failed to retrieve authenticated user.");
+      setLoading(false);
+      return;
+    }
+  
+    const allMembers = [...selectedUsers, authUser.user.id];
+  
+    const result = await createGroupChat(groupName, allMembers, authUser.user.id, projectId);
+  
     setLoading(false);
-
-    if (error) {
-      console.error("Error creating group chat:", error);
+  
+    if (!result) {
       toast.error("Failed to create group chat. Try again.");
       return;
     }
-
+  
     toast.success("Group chat created successfully!");
     onOpenChange(false);
   };
+  
+  
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -93,7 +116,9 @@ const CreateGroupChatDialog = ({ open, onOpenChange, projectMembers, projectId }
                 />
                 <div className="flex flex-col">
                   <span className="text-sm font-medium">{user.name}</span>
-                  <span className="text-xs text-muted-foreground">{user.role}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {user.role}
+                  </span>
                 </div>
               </Label>
             ))
@@ -102,7 +127,11 @@ const CreateGroupChatDialog = ({ open, onOpenChange, projectMembers, projectId }
           )}
         </ScrollArea>
 
-        <Button onClick={handleCreateGroupChat} disabled={loading} className="w-full mt-4">
+        <Button
+          onClick={handleCreateGroupChat}
+          disabled={loading}
+          className="w-full mt-4"
+        >
           {loading ? "Creating..." : "Create Group Chat"}
         </Button>
       </DialogContent>

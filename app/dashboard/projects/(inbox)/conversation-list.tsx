@@ -9,6 +9,7 @@ interface ConversationListProps {
   setSelectedMessage: (conversationId: string | null) => void;
   selectedMessage: string | null;
   isMinimized: boolean;
+  userId: string; 
 }
 
 const ConversationList = ({
@@ -16,12 +17,15 @@ const ConversationList = ({
   setSelectedMessage,
   selectedMessage,
   isMinimized,
+  userId, 
 }: ConversationListProps) => {
   return (
-    <div className="flex flex-col gap-2 h-full"> {/* Added h-full */}
+    <div className="flex flex-col gap-2 h-full">
       {conversations.length > 0 ? (
-        conversations.map((conversation) =>
-          isMinimized ? (
+        conversations.map((conversation) => {
+          console.log("🔍 Conversation:", conversation);
+
+          return isMinimized ? (
             <Avatar
               key={conversation.id}
               className={`w-12 h-12 cursor-pointer ${
@@ -44,23 +48,32 @@ const ConversationList = ({
               }`}
               onClick={() => setSelectedMessage(conversation.id)}
             >
-              <CardContent className="flex items-center gap-3 p-3">
-                <Avatar className="w-12 h-12">
-                  <AvatarImage src={conversation.avatar} alt={conversation.name} />
-                  <AvatarFallback>
-                    {conversation.name?.charAt(0).toUpperCase() || "?"}
-                  </AvatarFallback>
-                </Avatar>
+              <CardContent className="flex flex-col items-start gap-3 p-3">
+                <div className="flex items-center gap-3 w-full">
+                  <Avatar className="w-12 h-12">
+                    <AvatarImage src={conversation.avatar} alt={conversation.name} />
+                    <AvatarFallback>
+                      {conversation.name?.charAt(0).toUpperCase() || "?"}
+                    </AvatarFallback>
+                  </Avatar>
 
-                <div className="flex flex-col flex-grow overflow-hidden">
-                  <p className="text-sm font-semibold text-foreground">
-                    {conversation.name}
-                  </p>
+                  <div className="flex flex-col flex-grow overflow-hidden">
+                    <p className="text-sm font-semibold text-foreground">
+                      {conversation.name}
+                    </p>
+                  </div>
                 </div>
+                {conversation.lastMessageContent && (
+                  <p className="text-xs text-muted-foreground truncate w-full">
+                    {conversation.lastMessageSenderId === userId
+                      ? `You: ${conversation.lastMessageContent}`
+                      : `${conversation.lastMessageContent}`} 
+                  </p>
+                )}
               </CardContent>
             </Card>
-          )
-        )
+          );
+        })
       ) : (
         <p className="text-muted-foreground text-center">No conversations found.</p>
       )}

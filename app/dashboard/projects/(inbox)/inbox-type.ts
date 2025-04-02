@@ -12,9 +12,12 @@ export type SidebarProps = {
 
 export type Conversation = {
   id: string;
-  type: "dm" | "group"; 
+  type: "dm" | "group";
   name: string;
-  avatar: string; 
+  avatar: string;
+  lastMessageContent: string | null;
+  lastMessageSenderId: string | null;
+  lastMessageSenderName: string | null;
 };
 
 export type User = {
@@ -36,4 +39,27 @@ export type Message = {
     name: string;
     avatar_url: string;
   };
+};
+
+export type SupabaseConversationRow = {
+  id: string;
+  type: "dm" | "group";
+  name: string | null;
+  conversation_members: {
+    users: {
+      id: string;
+      name: string;
+      avatar_url: string;
+    }[]; 
+  }[];
+  messages: {
+    content: string;
+    sender_id: string;
+    created_at: string;
+    sender: { 
+      id: string;
+      name: string;
+      avatar_url: string;
+    }[];
+  }[];
 };

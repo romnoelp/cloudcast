@@ -2,6 +2,7 @@
 
 
 import { createClient } from "@/lib/supabase/server";
+import { Conversation, SupabaseConversationRow } from "./inbox-type";
 
 export const fetchProjectMembers = async (projectId: string) => {
   const supabase = await createClient();
@@ -125,7 +126,7 @@ export const fetchMessages = async (conversationId: string) => {
 
   return data.map((message) => ({
     ...message,
-    sender: Array.isArray(message.sender) ? message.sender[0] : message.sender, // Ensure sender is a single object
+    sender: Array.isArray(message.sender) ? message.sender[0] : message.sender, 
   }));
 };
 
@@ -159,3 +160,101 @@ export const sendMessage = async (
   return data;
 };
 
+export async function createGroupChat(name: string, memberIds: string[], createdBy: string, projectId: string) {
+  const supabase = await createClient();
+
+  const uniqueMemberIds = Array.from(new Set(memberIds));
+
+  const { data: conversation, error } = await supabase
+    .from("conversations")
+    .insert([{ name, type: "group", project_id: projectId, created_by: createdBy }])
+    .select()
+    .single();
+
+  if (error) {
+    console.error("❌ Error creating group conversation:", error);
+    return null;
+  }
+
+  const members = uniqueMemberIds.map((userId) => ({
+    conversation_id: conversation.id,
+    user_id: userId,
+  }));
+
+  const { error: membersError } = await supabase.from("conversation_members").insert(members);
+  if (membersError) {
+    console.error("❌ Error adding members to group chat:", membersError);
+    return null;
+  }
+
+  console.log("✅ Group chat created:", conversation.id);
+  return conversation;
+}
+
+
+export const fetchConversations = async (userId: string) => {
+  const supabase = await createClient();
+
+  if (!userId) {
+    console.error("❌ User ID is required.");
+    return [];
+  }
+
+  const { data: conversationIds, error: conversationIdsError } = await supabase
+    .from("conversation_members")
+    .select("conversation_id")
+    .eq("user_id", userId);
+
+  if (conversationIdsError) {
+    console.error("❌ Error fetching conversation IDs:", conversationIdsError);
+    return [];
+  }
+
+  const conversationIdList = conversationIds?.map((c) => c.conversation_id) || [];
+
+  const { data, error } = await supabase
+    .from("conversations")
+    .select(`
+      id,
+      type,
+      name,
+      conversation_members(users(id, name, avatar_url)),
+      messages(content, sender_id, created_at, sender:users(id, name, avatar_url))
+    `)
+    .in("id", conversationIdList);
+
+  if (error) {
+    console.error("❌ Error fetching conversations:", error);
+    return [];
+  }
+
+  console.log("📥 Raw Conversations:", data);
+
+  const conversationMap = new Map<string, Conversation>();
+
+  (data as SupabaseConversationRow[])?.forEach((row) => {
+    const users = row.conversation_members?.map((cm) => cm.users).filter(Boolean).flat() || [];
+    const recipient = users.find((u) => u.id !== userId);
+
+    const lastMessage = row.messages?.sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )[0];
+
+    console.log("🔍 Last Message:", lastMessage);
+
+    conversationMap.set(row.id, {
+      id: row.id,
+      type: row.type,
+      name: row.name || (recipient?.name || "Unnamed Chat"),
+      avatar: recipient?.avatar_url || "",
+      lastMessageContent: lastMessage?.content || null,
+      lastMessageSenderId: lastMessage?.sender_id || null,
+      lastMessageSenderName: lastMessage?.sender?.[0]?.name || null, 
+    });
+  });
+
+  const processedConversations = Array.from(conversationMap.values());
+  console.log("✅ Processed Conversations:", processedConversations);
+
+  return processedConversations;
+};

@@ -59,7 +59,7 @@ export const GET = async (request: Request) => {
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
-        maxAge: 600,
+        maxAge: 60 * 60 * 24 * 7
     });
 
     console.log("✅ Session successfully exchanged! Redirecting to:", targetPath);
