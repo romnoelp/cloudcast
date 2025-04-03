@@ -14,6 +14,9 @@ import {
 } from "@/app/dashboard/projects/actions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import InboxPanel from "./(inbox)/inbox-panel";
+import FileList from "./(files)/file-list";
+import FilePreview from "./(files)/file-preview";
+import FileSidebar from "./(files)/file-sidebar";
 
 interface ProjectDetailsProps {
   projectId: string;
@@ -87,8 +90,8 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
       >
         <TabsList className="space-x-2">
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
-          <TabsTrigger value="messaging">Messaging</TabsTrigger>
-          <TabsTrigger value="sent">Sent</TabsTrigger>
+          <TabsTrigger value="messages">Messages</TabsTrigger>
+          <TabsTrigger value="files">Files</TabsTrigger>
           <TabsTrigger value="trash">Trash</TabsTrigger>
         </TabsList>
 
@@ -102,8 +105,21 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
               fetchTasksData={fetchTasksData}
             />
           </TabsContent>
-          <TabsContent value="messaging" className="flex flex-grow h-full">
+          <TabsContent value="messages" className="flex flex-grow h-full">
             <InboxPanel />
+          </TabsContent>
+          <TabsContent value="files" className="h-full">
+            <div className="flex h-full">
+              <div className="w-1/7 pr-4">
+                <FileSidebar />
+              </div>
+              <div className="flex-grow">
+                <FileList />
+              </div>
+              <div className="w-1/3 pl-4">
+                <FilePreview />
+              </div>
+            </div>
           </TabsContent>
         </div>
       </Tabs>
