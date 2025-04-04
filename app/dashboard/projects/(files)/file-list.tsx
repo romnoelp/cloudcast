@@ -78,6 +78,12 @@ const FileList = () => {
     }
   };
 
+  const handleDownload = (filePath: string) => {
+    // Trigger file download
+    const downloadUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/project-files/${filePath}`;
+    window.open(downloadUrl, "_blank");
+  };
+
   return (
     <div className="w-full h-full overflow-hidden">
       <Card className="h-full">
@@ -89,7 +95,10 @@ const FileList = () => {
                   <div key={file.id} className="w-full">
                     <ContextMenu>
                       <ContextMenuTrigger asChild>
-                        <Card className="w-full hover:bg-secondary cursor-pointer">
+                        <Card
+                          className="w-full hover:bg-secondary cursor-pointer"
+                          onDoubleClick={() => handleDownload(file.file_path)} // Double-click to download
+                        >
                           <CardContent className="p-4 space-y-2">
                             <div className="flex justify-between items-start">
                               <div>
@@ -109,7 +118,10 @@ const FileList = () => {
                         </Card>
                       </ContextMenuTrigger>
                       <ContextMenuContent>
-                        <ContextMenuItem>Open</ContextMenuItem>
+                        {/* Right-click context menu item to open/download */}
+                        <ContextMenuItem onClick={() => handleDownload(file.file_path)}>
+                          Open
+                        </ContextMenuItem>
                         <ContextMenuItem onClick={() => handleDelete(file.id, file.file_path)}>
                           Delete
                         </ContextMenuItem>
