@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+"use client";
+
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, Clock, Star, Trash2 } from "lucide-react";
-import FileDropdown from './file-dropdown';
+import { Clock, Star, Trash2 } from "lucide-react";
+import FileDropdown from "./file-dropdown";
 
 const FileSidebar = () => {
   const [activeButton, setActiveButton] = useState<string | null>(null);
@@ -14,17 +16,14 @@ const FileSidebar = () => {
   return (
     <Card className="h-full">
       <CardHeader className="flex flex-col items-stretch">
-        <FileDropdown />
+        <FileDropdown
+          onFileUploaded={(filePath) => {
+            console.log("File uploaded:", filePath);
+          }}
+        />
       </CardHeader>
       <CardContent className="space-y-2">
-        <Button
-          variant={activeButton === "Shared with me" ? "secondary" : "ghost"}
-          className="w-full justify-start"
-          onClick={() => handleButtonClick("Shared with me")}
-        >
-          <Users className="mr-2 h-4 w-4" />
-          Shared with me
-        </Button>
+        
         <Button
           variant={activeButton === "Recent" ? "secondary" : "ghost"}
           className="w-full justify-start"

@@ -92,7 +92,6 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="messages">Messages</TabsTrigger>
           <TabsTrigger value="files">Files</TabsTrigger>
-          <TabsTrigger value="trash">Trash</TabsTrigger>
         </TabsList>
 
         <div className="flex-grow overflow-auto">
