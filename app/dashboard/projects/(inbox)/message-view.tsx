@@ -28,7 +28,7 @@ const MessageView = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
 
-  const handleStartJitsiCall = () => {
+  const handleCreateConference = () => {
     startJitsiCall(projectId, selectedMessage, user); 
   };
 
@@ -134,7 +134,7 @@ const MessageView = ({
     <div className="flex h-full flex-col w-full">
       {selectedMessage ? (
         <>
-          <MessageActions onVoiceCall={handleStartJitsiCall} onVideoCall={handleStartJitsiCall} />
+          <MessageActions onConference={handleCreateConference} /> 
           <div className="flex-grow overflow-hidden">
             <ScrollArea className="w-full h-full rounded-md border p-4">
               {messages.length > 0 ? (
