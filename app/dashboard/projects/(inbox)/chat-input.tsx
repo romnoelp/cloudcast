@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Paperclip, ThumbsUp, Send } from "lucide-react";
+import { ThumbsUp, Send } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import FileUploadDialog from "./file-upload-dialog";
 import { sendMessage } from "./actions";
-import { useUser } from "@/context/user-context"; 
+import { useUser } from "@/context/user-context";
 
 type ChatInputProps = {
   conversationId: string;
@@ -14,7 +13,6 @@ type ChatInputProps = {
 
 const ChatInput = ({ conversationId }: ChatInputProps) => {
   const [message, setMessage] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const { user } = useUser();
 
@@ -31,16 +29,6 @@ const ChatInput = ({ conversationId }: ChatInputProps) => {
 
   return (
     <div className="flex w-full items-center gap-2 px-4 py-3">
-      <Button variant="ghost" size="icon" onClick={() => setIsDialogOpen(true)}>
-        <Paperclip className="w-5 h-5 text-muted-foreground" />
-      </Button>
-
-      <FileUploadDialog
-        isOpen={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        onFileSelect={setFile}
-      />
-
       <Input
         className="flex-grow h-12 border border-border focus:border-primary focus:ring-0"
         placeholder="Type a message..."

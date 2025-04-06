@@ -24,7 +24,6 @@ export const uploadFile = async (file: File, projectId: string) => {
     );
   }
 
-  // Store file directly under the project folder (no nested folders)
   const filePath = `uploads/${projectId}/${file.name}`;
 
   const { data: storageData, error: storageError } = await supabase.storage
