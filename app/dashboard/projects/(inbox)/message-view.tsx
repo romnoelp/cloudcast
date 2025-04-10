@@ -136,7 +136,7 @@ const MessageView = ({
         <>
           <MessageActions onConference={handleCreateConference} /> 
           <div className="flex-grow overflow-hidden">
-            <ScrollArea className="w-full h-full rounded-md border p-4">
+            <ScrollArea className="w-full h-[550px] rounded-md border p-4">
               {messages.length > 0 ? (
                 messages.map((msg) => (
                   <div
