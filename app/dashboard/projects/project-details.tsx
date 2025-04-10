@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { Project } from "@/types/project";
 import { Task } from "./(tasks)/task-type";
@@ -33,6 +31,8 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
     { id: string; name: string; avatar: string }[]
   >([]);
   const [loading, setLoading] = useState(true);
+  const [selectedFile, setSelectedFile] = useState<{ file_name: string } | null>(null);
+
   const fetchTasksData = async () => {
     const updatedTasks = await fetchTasksForProject(projectId);
     setTasks(updatedTasks || []);
@@ -113,10 +113,10 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                 <FileSidebar />
               </div>
               <div className="flex-grow">
-                <FileList />
+                <FileList setSelectedFile={setSelectedFile} />
               </div>
               <div className="w-1/3 pl-4">
-                <FilePreview />
+                <FilePreview selectedFile={selectedFile} />
               </div>
             </div>
           </TabsContent>

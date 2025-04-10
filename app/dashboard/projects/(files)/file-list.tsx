@@ -13,6 +13,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { toast } from "sonner";
+import { debounce } from "lodash";
 
 interface File {
   id: string;
@@ -23,7 +24,7 @@ interface File {
   upload_time: string;
 }
 
-const FileList = () => {
+const FileList = ({ setSelectedFile }: { setSelectedFile: React.Dispatch<React.SetStateAction<{ file_name: string } | null>> }) => {
   const [files, setFiles] = useState<File[]>([]);
   const { project } = useProject();
   const supabase = createClient();
@@ -79,10 +80,13 @@ const FileList = () => {
   };
 
   const handleDownload = (filePath: string) => {
-    // Trigger file download
     const downloadUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/project-files/${filePath}`;
     window.open(downloadUrl, "_blank");
   };
+
+  const debouncedSelectFile = debounce((file: File) => {
+    setSelectedFile({ file_name: file.file_name });
+  }, 600); 
 
   return (
     <div className="w-full h-full overflow-hidden">
@@ -97,7 +101,10 @@ const FileList = () => {
                       <ContextMenuTrigger asChild>
                         <Card
                           className="w-full hover:bg-secondary cursor-pointer"
-                          onDoubleClick={() => handleDownload(file.file_path)} // Double-click to download
+                          onClick={() => debouncedSelectFile(file)} // Use debounced function
+                          onDoubleClick={() => {
+                            handleDownload(file.file_path);
+                          }}
                         >
                           <CardContent className="p-4 space-y-2">
                             <div className="flex justify-between items-start">
@@ -118,7 +125,6 @@ const FileList = () => {
                         </Card>
                       </ContextMenuTrigger>
                       <ContextMenuContent>
-                        {/* Right-click context menu item to open/download */}
                         <ContextMenuItem onClick={() => handleDownload(file.file_path)}>
                           Open
                         </ContextMenuItem>
