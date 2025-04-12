@@ -24,7 +24,11 @@ interface File {
   upload_time: string;
 }
 
-const FileList = ({ setSelectedFile }: { setSelectedFile: React.Dispatch<React.SetStateAction<{ file_name: string } | null>> }) => {
+interface FileListProps {
+  setSelectedFile: React.Dispatch<React.SetStateAction<{ file_name: string; file_path: string } | null>>; // Corrected type
+}
+
+const FileList: React.FC<FileListProps> = ({ setSelectedFile }) => {
   const [files, setFiles] = useState<File[]>([]);
   const { project } = useProject();
   const supabase = createClient();
@@ -85,8 +89,8 @@ const FileList = ({ setSelectedFile }: { setSelectedFile: React.Dispatch<React.S
   };
 
   const debouncedSelectFile = debounce((file: File) => {
-    setSelectedFile({ file_name: file.file_name });
-  }, 600); 
+    setSelectedFile({ file_name: file.file_name, file_path: file.file_path }); // Ensure file_path is included
+  }, 600);
 
   return (
     <div className="w-full h-full overflow-hidden">
@@ -101,7 +105,7 @@ const FileList = ({ setSelectedFile }: { setSelectedFile: React.Dispatch<React.S
                       <ContextMenuTrigger asChild>
                         <Card
                           className="w-full hover:bg-secondary cursor-pointer"
-                          onClick={() => debouncedSelectFile(file)} // Use debounced function
+                          onClick={() => debouncedSelectFile(file)}
                           onDoubleClick={() => {
                             handleDownload(file.file_path);
                           }}

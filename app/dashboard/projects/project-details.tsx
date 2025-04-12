@@ -31,7 +31,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
     { id: string; name: string; avatar: string }[]
   >([]);
   const [loading, setLoading] = useState(true);
-  const [selectedFile, setSelectedFile] = useState<{ file_name: string } | null>(null);
+  const [selectedFile, setSelectedFile] = useState<{ file_name: string; file_path: string } | null>(null); // Corrected type
 
   const fetchTasksData = async () => {
     const updatedTasks = await fetchTasksForProject(projectId);
