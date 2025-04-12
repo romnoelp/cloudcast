@@ -89,7 +89,7 @@ const FileList: React.FC<FileListProps> = ({ setSelectedFile }) => {
   };
 
   const debouncedSelectFile = debounce((file: File) => {
-    setSelectedFile({ file_name: file.file_name, file_path: file.file_path }); // Ensure file_path is included
+    setSelectedFile({ file_name: file.file_name, file_path: file.file_path }); 
   }, 600);
 
   return (

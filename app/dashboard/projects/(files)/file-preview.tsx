@@ -3,6 +3,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import dynamic from 'next/dynamic';
+import { Star } from "lucide-react";
 
 interface FilePreviewProps {
   selectedFile: { file_name: string; file_path: string } | null;
@@ -13,12 +14,15 @@ const PdfViewerClient = dynamic(
   { ssr: false }
 );
 
-const FilePreview: React.FC<FilePreviewProps> = ({ selectedFile }) => {
+const FilePreview = ({ selectedFile }: FilePreviewProps) => {
   return (
     <div className="w-full h-[740px] overflow-auto">
       <Card className="h-full">
         <CardHeader>
-          <CardTitle>Preview</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Star className="w-5 h-5 text-primary" />
+            <span>AI Preview</span>
+          </CardTitle>
         </CardHeader>
         <CardContent className="overflow-auto">
           {selectedFile ? (
