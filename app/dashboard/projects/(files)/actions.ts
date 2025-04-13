@@ -1,4 +1,4 @@
-'use server';
+"use server";
 
 import { createClient } from "@/lib/supabase/server";
 
@@ -71,7 +71,7 @@ export async function fetchFiles(projectId: string) {
   }
 
   return data;
-};
+}
 
 export async function deleteFile(fileId: string, filePath: string) {
   const supabase = await createClient();
@@ -94,7 +94,7 @@ export async function deleteFile(fileId: string, filePath: string) {
     console.error("Database delete error:", dbError);
     throw new Error(dbError.message);
   }
-};
+}
 
 export async function sendPdfTextToAI(extractedText: string) {
   const aiServerUrl = process.env.NEXT_PUBLIC_AI_SERVER_URL;
@@ -105,27 +105,50 @@ export async function sendPdfTextToAI(extractedText: string) {
   }
 
   if (!extractedText) {
-    return { success: false, error: 'No text provided to send.' };
+    return { success: false, error: "No text provided to send." };
   }
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000); 
+
     const response = await fetch(aiServerUrl, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
+        Accept: "application/json", 
       },
       body: JSON.stringify({ text: extractedText }),
+      signal: controller.signal,
     });
 
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
-      console.error('❌ Failed to send text to AI server:', response.status, response.statusText);
-      return { success: false, error: `Failed with status: ${response.status}` };
+      console.error(
+        "❌ Failed to send text to AI server:",
+        response.status,
+        response.statusText
+      );
+      let errorMessage = `Failed with status: ${response.status}`;
+      try {
+        const errorData = await response.json();
+        if (errorData?.error) {
+          errorMessage += `: ${errorData.error}`;
+        }
+      } catch (parseError) {
+        console.error("Error parsing error response:", parseError);
+      }
+      return { success: false, error: errorMessage };
     }
 
     const data = await response.json();
-    console.log('✅ Text sent to AI server successfully:', data);
+    console.log("✅ Text sent to AI server successfully:", data);
     return { success: true, data };
   } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      return { success: false, error: 'Request timed out. The AI processing might be taking longer than expected.' };
+    }
     console.error('❌ Error sending text to AI server:', error);
     return { success: false, error: 'Network error while sending text' };
   }
