@@ -45,56 +45,56 @@ const PdfViewerClient = ({ selectedFile }: { selectedFile: FileData }) => {
     });
   }, []);
 
-  useEffect(() => {
-    const extractTextFromPdf = async () => {
-      if (!selectedFile?.file_path) {
-        setPdfError('No file selected or file path missing.');
+  const extractTextFromPdf = useCallback(async () => {
+    if (!selectedFile?.file_path) {
+      setPdfError('No file selected or file path missing.');
+      return;
+    }
+
+    setLoadingPdf(true);
+    setPdfError(null);
+
+    try {
+      const pdfUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/project-files/${selectedFile.file_path}`;
+      const response = await fetch(pdfUrl);
+
+      if (!response.ok) {
+        setPdfError(`Failed to fetch PDF: ${response.status}`);
         return;
       }
 
-      setLoadingPdf(true);
-      setPdfError(null);
+      const pdfArrayBuffer = await response.arrayBuffer();
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `/static/workers/pdf.worker.min.js`;
 
-      try {
-        const pdfUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/project-files/${selectedFile.file_path}`;
-        const response = await fetch(pdfUrl);
+      const pdf = await pdfjsLib.getDocument({ data: pdfArrayBuffer }).promise;
+      let fullText = '';
 
-        if (!response.ok) {
-          setPdfError(`Failed to fetch PDF: ${response.status}`);
-          return;
-        }
-
-        const pdfArrayBuffer = await response.arrayBuffer();
-        pdfjsLib.GlobalWorkerOptions.workerSrc = `/static/workers/pdf.worker.min.js`;
-
-        const pdf = await pdfjsLib.getDocument({ data: pdfArrayBuffer }).promise;
-        let fullText = '';
-
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const textContent = await page.getTextContent();
-          const pageText = textContent.items
-            .filter((item): item is TextItem => 'str' in item)
-            .map(item => item.str)
-            .join(' ');
-          fullText += pageText + '\n';
-        }
-
-        if (!fullText.trim()) {
-          setPdfError('PDF text is empty.');
-        } else {
-          sendTextToAIServer(fullText);
-        }
-      } catch (error) {
-        console.error('❌ Error extracting PDF:', error);
-        setPdfError('Failed to extract text from PDF.');
-      } finally {
-        setLoadingPdf(false);
+      for (let i = 1; i <= Math.min(pdf.numPages, 3); i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items
+          .filter((item): item is TextItem => 'str' in item)
+          .map(item => item.str)
+          .join(' ');
+        fullText += pageText + '\n';
       }
-    };
 
-    extractTextFromPdf();
+      if (!fullText.trim()) {
+        setPdfError('PDF text is empty.');
+      } else {
+        sendTextToAIServer(fullText);
+      }
+    } catch (error) {
+      console.error('❌ Error extracting PDF:', error);
+      setPdfError('Failed to extract text from PDF.');
+    } finally {
+      setLoadingPdf(false);
+    }
   }, [selectedFile, sendTextToAIServer]);
+
+  useEffect(() => {
+    extractTextFromPdf();
+  }, [selectedFile, extractTextFromPdf]);
 
   return (
     <div className="p-4 space-y-4">
