@@ -7,7 +7,7 @@ CloudCast, a platform that combines the best of Discord, Jira, and Google Drive 
 ## Tech Stack 
 - Front and Backend : Next JS 
 - Database and Authentication : Supabase 
-- AI/LLM Integration : Ollama + DeepSeekR1
+- AI/LLM Integration : Ollama + qwen0.5b
 
 
 ## Roadmap
@@ -388,7 +388,7 @@ const JitsiMeet = ({ roomName }: JitsiMeetProps) => {
 
 - ### Dark/Light Mode Switch Component
 
-This code snippet demonstrates a React component using a `Switch` component (likely from a UI library like Shadcn UI or Radix UI) to toggle between dark and light themes.
+This code snippet demonstrates a React component using a `Switch` component to toggle between dark and light themes.
 
 ```javascript
 <Switch
@@ -399,4 +399,26 @@ This code snippet demonstrates a React component using a `Switch` component (lik
 />
 ``` 
 
-- ### TODO : Put the server code here 
+- ### Express Server (with Axios)
+```js
+app.post('/api/process-pdf', async (req, res) => {
+  const { text } = req.body;
+  if (!text) {
+    return res.status(400).json({ error: 'No text provided in the request body.' });
+  }
+
+  const ollamaApiUrl = `${process.env.OLLAMA_URL || 'http://localhost:11434'}/api/generate`;
+  const ollamaPayload = {
+    prompt: `Summarize the following text concisely in one or two short sentences:\n\n${text}`,
+    model: 'qwen:0.5b',
+    stream: false,
+  };
+
+  try {
+    const response = await axios.post(ollamaApiUrl, ollamaPayload);
+    res.json({ result: response.data.response });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to communicate with Ollama.' });
+  }
+});
+```  
