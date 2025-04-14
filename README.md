@@ -355,7 +355,7 @@ const debouncedSelectFile = debounce((file: File) => {
 ## Features
 - ### Embedding Jitsi Meet with JWT Authentication
 
-This React component, `JitsiMeet`, demonstrates how to embed a Jitsi Meet video conferencing instance within your application and pass a JWT (JSON Web Token) for authentication.
+This React component, `JitsiMeet`, demonstrates how to embed a Jitsi Meet video conferencing instance within the application and pass a JWT (JSON Web Token) for authentication.
 
 ```javascript
 const JitsiMeet = ({ roomName }: JitsiMeetProps) => {
@@ -400,6 +400,7 @@ This code snippet demonstrates a React component using a `Switch` component to t
 ``` 
 
 - ### Express Server (with Axios)
+This snippet shows the endpoint at where a server being run in my computer locally is receiving the payload from the frontend, and that being sent to ollama through `ngrok`
 ```js
 app.post('/api/process-pdf', async (req, res) => {
   const { text } = req.body;
