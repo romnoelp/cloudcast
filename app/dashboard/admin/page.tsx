@@ -65,10 +65,13 @@ export default function AdminPage() {
         const taskData: RawTask[] = await fetchAllTasks(selectedOrg.id);
 
         // Map projects to a quick lookup by project_id
-        const projectMap = projects.reduce((map, project) => {
-          map[project.id] = project.name;
-          return map;
-        }, {} as Record<string, string>);
+        const projectMap = projects.reduce(
+          (map, project) => {
+            map[project.id] = project.name;
+            return map;
+          },
+          {} as Record<string, string>,
+        );
 
         // Map taskData and replace project_id with project name
         const mappedTasks: Task[] = taskData.map((task) => ({
@@ -104,27 +107,27 @@ export default function AdminPage() {
         {[
           {
             title: "Total Users",
-            value: stats.totalUsers,
-            change: "+ 20 users since last month",
-            status: "active",
+            value: `${stats.totalUsers} users`,
+            change: "",
+            status: "Member Count",
           },
           {
             title: "Total Projects",
-            value: stats.totalProjects,
-            change: "+ 5 projects this month",
-            status: "success",
+            value: `${stats.totalProjects} project(s)`,
+            change: "",
+            status: "Project Count",
           },
           {
             title: "Total Files",
-            value: stats.totalFiles,
-            change: "+ 56 files uploaded",
-            status: "warning",
+            value: `${stats.totalFiles} file(s)`,
+            change: "",
+            status: "File Count",
           },
           {
             title: "Total Tasks",
-            value: stats.totalTasks,
-            change: "+ 10 tasks added this week",
-            status: "success",
+            value: `${stats.totalTasks} file(s)`,
+            change: "",
+            status: "Task Count",
           },
         ].map((stat, index) => (
           <Card key={index}>
@@ -132,7 +135,7 @@ export default function AdminPage() {
               <CardTitle className="text-sm font-medium">
                 {stat.title}
               </CardTitle>
-              <Badge variant="default">{stat.status}</Badge>
+              <Badge variant="outline">{stat.status}</Badge>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stat.value}</div>
