@@ -20,7 +20,7 @@ export const uploadFile = async (file: File, projectId: string) => {
 
   if (!allowedTypes.includes(file.type)) {
     throw new Error(
-      "Invalid file type. Allowed types: PDF, DOCX, PPT, JPEG, PNG, MP4, MP3, XLS, XLSX."
+      "Invalid file type. Allowed types: PDF, DOCX, PPT, JPEG, PNG, MP4, MP3, XLS, XLSX.",
     );
   }
 
@@ -110,13 +110,13 @@ export async function sendPdfTextToAI(extractedText: string) {
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000); 
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
 
     const response = await fetch(aiServerUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Accept: "application/json", 
+        Accept: "application/json",
       },
       body: JSON.stringify({ text: extractedText }),
       signal: controller.signal,
@@ -128,7 +128,7 @@ export async function sendPdfTextToAI(extractedText: string) {
       console.error(
         "❌ Failed to send text to AI server:",
         response.status,
-        response.statusText
+        response.statusText,
       );
       let errorMessage = `Failed with status: ${response.status}`;
       try {
@@ -146,10 +146,14 @@ export async function sendPdfTextToAI(extractedText: string) {
     console.log("✅ Text sent to AI server successfully:", data);
     return { success: true, data };
   } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      return { success: false, error: 'Request timed out. The AI processing might be taking longer than expected.' };
+    if (error instanceof Error && error.name === "AbortError") {
+      return {
+        success: false,
+        error:
+          "Request timed out. The AI processing might be taking longer than expected.",
+      };
     }
-    console.error('❌ Error sending text to AI server:', error);
-    return { success: false, error: 'Network error while sending text' };
+    console.error("❌ Error sending text to AI server:", error);
+    return { success: false, error: "Network error while sending text" };
   }
 }
