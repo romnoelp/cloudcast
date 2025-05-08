@@ -1,5 +1,6 @@
-
 # CloudCast
+## User Manual 
+ - https://shorturl.at/owF9M (Safe)
 
 CloudCast, a platform that combines the best of Discord, Jira, and Google Drive into a powerful knowledge management and collaboration tool designed for professional and software development environments. Built with organization in mind, it offers seamless project creation, structured task management, team messaging, and role-based separation of concerns—all within an intuitive, project-focused workspace. Stay aligned, assign tasks, share knowledge, and communicate effortlessly, everything your team needs, all in one place.
 
